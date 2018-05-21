@@ -1,0 +1,24 @@
+{
+  "name": "binder",
+  "version": "1.0.0",
+  "description": "Consolidate all your files on the cloud.",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.16.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeveloperRic/binder.git"
+  },
+  "author": "Victor Olaitan <victor.n.olaitan@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeveloperRic/binder/issues"
+  },
+  "homepage": "https://github.com/DeveloperRic/binder#readme"
+}

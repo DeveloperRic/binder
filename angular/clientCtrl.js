@@ -16,7 +16,7 @@ client.controller("clientCtrl", function($scope) {
   $scope.navButtons = navButtons;
 });
 
-app.controller("loginController", function($scope) {
+client.controller("loginController", function($scope) {
 
 });
 
