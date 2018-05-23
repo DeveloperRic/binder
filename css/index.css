@@ -1,5 +1,5 @@
 * {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", Helvetica, Arial, sans-serif;
 }
 
 a {
@@ -8,7 +8,55 @@ a {
 
 body {
   padding-top: 50px;
-  background-color: #fafafa
+  background-color: #eeeeee;
+  color: #393f44;
+}
+
+footer {
+  display: flex;
+  margin: 20px;
+  justify-content: center;
+  text-align: center;
+  color: #919191;
+}
+
+h1 {
+  font-family: "Montserrat", Helvetica, Arial, sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+}
+
+h2 {
+  margin-bottom: 20px;
+  font-family: "Montserrat", Helvetica, Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 500;
+}
+
+h3 {
+  min-width: 100%;
+  font-family: "Open Sans", Helvetica, Arial, sans-serif;
+  font-style: italic;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+h4 {
+  font-family: "Open Sans", Helvetica, Arial, sans-serif;
+  font-size: 24px;
+}
+
+input {
+  color: #393f44;
+  background-color: #eeeeee;
+}
+
+section {
+  margin-bottom: 40px;
+}
+
+ul {
+  list-style-type: none;
 }
 
 #nav {
@@ -42,34 +90,81 @@ body {
 }
 
 #loginStage {
-  
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
 }
 
-.heading {
-  font-size: 30px;
-  font-weight: 500;
+#loginStage .login-stage {
+  padding: 30px;
+  border-radius: 25px;
 }
 
-.background-primary {
+#loginStage .login-stage form {
+  margin: 0px;
+}
+
+#loginStage .login-stage .login-stage-submit {
+  display: flex;
+  justify-content: center;
+}
+
+.background-accent {
   background-color: #4CAF50;
 }
 
-.background-secondary {
+.background-primary {
   background-color: #eeeeee;
 }
 
+.background-secondary {
+  background-color: #bdbdbd;
+}
+
 .background-secondary-strong {
-  background-color: #e0e0e0;
+  background-color: #757575;
 }
 
-.text-color-primary {
-  color: #212121;
+.blur {
+  filter: blur(5px);
 }
 
-.text-color-secondary {
+.drop-shadow {
+  box-shadow: 1px 1px 10px #bdbdbd;
+}
+
+.hide {
+  display: none;
+}
+
+.paralax {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-color-accent {
+  color: #0097a7 !important;
+}
+
+.text-color-inverse {
+  color: #fafafa;
+}
+
+.text-color-muted {
   color: #757575;
 }
 
-.text-color-invert {
-  color: #FFFFFF;
+.text-color-primary {
+  color: #393f44 !important;
+}
+
+.text-shaddow {
+  text-shadow: 2px 2px #212121;
 }

@@ -5,6 +5,13 @@ class User {
     this.username = username;
     this.password = password;
   }
+
+  toJSON() {
+    return {
+      username: this.username,
+      password: this.password
+    };
+  }
 }
 
 var users = [];
@@ -14,6 +21,26 @@ exports.loadUsers = function() {
   users.push(new User("admin", "admin"));
 };
 
-exports.getUser = function(username) {
-  return Date();
+exports.getUser = function(username, password) {
+  console.log(username + " " + password);
+  var result = {
+    access: false,
+    user: null
+  };
+  users.forEach(user => {
+    if (user.username == username) {
+      if (user.password == password) {
+        result = {
+          access: true,
+          user: user
+        };
+      } else {
+        result = {
+          access: false,
+          user: user
+        };
+      }
+    }
+  });
+  return result;
 };
