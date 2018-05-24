@@ -48,11 +48,18 @@ h4 {
 
 input {
   color: #393f44;
-  background-color: #eeeeee;
 }
 
 section {
   margin-bottom: 40px;
+}
+
+table td {
+  padding: 5px;
+}
+
+table .error {
+  color: #ff0000;
 }
 
 ul {
@@ -89,6 +96,21 @@ ul {
   font-weight: 500;
 }
 
+#welcomeStage {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+#welcomeStage .create-account {
+  text-align: center;
+}
+
+#welcomeStage .create-account-submit  {
+  margin-top: 10px;
+}
+
 #loginStage {
   display: flex;
   height: 100%;
@@ -105,9 +127,8 @@ ul {
   margin: 0px;
 }
 
-#loginStage .login-stage .login-stage-submit {
-  display: flex;
-  justify-content: center;
+#loginStage .login-stage .return {
+  margin: 10px;
 }
 
 .background-accent {
@@ -128,6 +149,12 @@ ul {
 
 .blur {
   filter: blur(5px);
+}
+
+.center-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .drop-shadow {

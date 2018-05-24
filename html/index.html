@@ -14,8 +14,9 @@
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
   <script src="../angular/app.client.js"></script>
-  <script src="../angular/app.component.login.js"></script>
+  <script src="../model/app.module.user.js"></script>
 </head>
 <nav id="nav" class="navbar navbar-fixed-top background-accent text-color-inverse">
   <div class="nav-logoTitle">
@@ -30,23 +31,76 @@
 </nav>
 
 <body>
+  <div id="welcomeStage" class="w3-container center" ng-controller="welcomeCtrl" ng-show="stage.focused">
+    <div class="create-account" ng-show="!userFound">
+      <h1>Hi! This is Binder!</h1>
+      <h2>Get started by creating an account</h2>
+      <form name="createAccountForm">
+        <table class="center-content background-primary">
+          <tr>
+            <td>Email Address</td>
+            <td>
+              <input type="email" name="email" ng-model="email" required placeholder="email@example.com" />
+            </td>
+          </tr>
+          <tr>
+            <td>Password</td>
+            <td>
+              <input type="text" name="password" ng-model="password" required />
+            </td>
+          </tr>
+          <tr>
+            <td>Confirm password</td>
+            <td>
+              <input type="text" name="passwordconfirm" ng-model="passwordconfirm" required />
+            </td>
+          </tr>
+          <tr class="center-content">
+            <td>
+              <div class="error" ng-show="error.exists">{{error.message}}</div>
+            </td>
+          </tr>
+          <tr class="center-content">
+            <td>
+              <button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="createAccount()">Create Account</button>
+              or
+              <button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="login()">Login</button>
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+  </div>
   <div id="loginStage" class="w3-container center" ng-controller="loginCtrl" ng-show="stage.focused">
     <div class="login-stage background-accent drop-shadow text-color-inverse">
+      <button class="btn return text-color-primary background-primary" ng-show="canReturn" ng-click="return()">
+        <i class="material-icons">arrow_back</i>
+      </button>
       <form name="loginForm">
-        <div class="row">
-          <span class="col-md-4">Username</span>
-          <input type="text" name="username" ng-model="username" required />
-        </div>
-        <br>
-        <div class="row">
-          <span class="col-md-4">Password</span>
-          <input type="text" name="password" ng-model="password" required />
-        </div>
-        <br>
-        <div class="row login-stage-submit">
-          <button type="submit" class="btn col-md-6 text-color-primary" ng-click="login()">Login</button>
-        </div>
-        <div class="row" ng-show="error.exists">{{error.message}}</div>
+        <table class="center-content text-color-inverse">
+          <tr>
+            <td>Email Address</td>
+            <td>
+              <input type="email" name="email" ng-model="email" required placeholder="email@example.com" />
+            </td>
+          </tr>
+          <tr>
+            <td>Password</td>
+            <td>
+              <input type="text" name="password" ng-model="password" required />
+            </td>
+          </tr>
+          <tr class="center-content">
+            <td>
+              <div class="error" ng-show="error.exists">{{error.message}}</div>
+            </td>
+          </tr>
+          <tr class="center-content">
+            <td>
+              <button type="submit" class="btn create-account-submit text-color-primary background-primary" ng-click="login()">Login</button>
+            </td>
+          </tr>
+        </table>
       </form>
     </div>
   </div>
