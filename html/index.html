@@ -11,16 +11,15 @@
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
   <link href="../css/index.css" rel="stylesheet">
 
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
 
   <script src="../angular/app.client.js"></script>
   <script src="../model/app.module.user.js"></script>
 </head>
 <nav id="nav" class="navbar navbar-fixed-top background-accent text-color-inverse">
   <div class="nav-logoTitle">
-    <i class="large material-icons">folder</i>
     <span class="nav-title">Binder</span>
   </div>
   <div class="nav-buttons">
@@ -46,13 +45,13 @@
           <tr>
             <td>Password</td>
             <td>
-              <input type="text" name="password" ng-model="password" required />
+              <input type="password" name="password" ng-model="password" required />
             </td>
           </tr>
           <tr>
             <td>Confirm password</td>
             <td>
-              <input type="text" name="passwordconfirm" ng-model="passwordconfirm" required />
+              <input type="password" name="passwordconfirm" ng-model="passwordconfirm" required />
             </td>
           </tr>
           <tr class="center-content">
@@ -87,7 +86,7 @@
           <tr>
             <td>Password</td>
             <td>
-              <input type="text" name="password" ng-model="password" required />
+              <input type="password" name="password" ng-model="password" required />
             </td>
           </tr>
           <tr class="center-content">
@@ -102,6 +101,58 @@
           </tr>
         </table>
       </form>
+    </div>
+  </div>
+  <div id="connectStage" class="w3-container center" ng-controller="connectCtrl" ng-show="stage.focused">
+    <h2>Let's Connect!</h2>
+    <h3>Select the cloud storage services you use</h3>
+    <div>
+      <button class="btn source" ng-repeat="source in sources" ng-click="onSelect(source.id)" ng-disabled="sourceConnected(source.id)"
+        ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected(source.id)]">{{source.name}}</button>
+    </div>
+    <div class="redirect background-secondary" ng-show="redirectReady">
+      <button class="btn background-primary" ng-click="onRedirect()">Click to sign into {{selected.name}}</button>
+      <div class="redirect-response" ng-show="responseReady">
+        <input type="text" name="authcode" ng-model="authcode" placeholder="Paste your code here" />
+        <button class="btn background-primary" ng-click="onResponse()">Connect!</button>
+      </div>
+    </div>
+    <button class="btn continue text-color-inverse background-accent" ng-disabled="!hasConnected()" ng-click="onContinue()">Continue to dashboard</button>
+  </div>
+  <div id="dashboardStage" ng-controller="dashboardCtrl" ng-show="stage.focused">
+    <div class="label">
+      <span class="label-text">Folders</span>
+      <div class="label-floor"></div>
+    </div>
+    <div class="tiles">
+      <div class="tile background-secondary drop-shadow-light" ng-repeat="folder in folders">
+        <div class="tile-top">
+          <i class="material-icons">folder</i>
+        </div>
+        <div class="tile-content">
+          <span class="tile-text">{{folder.name}}</span>
+        </div>
+        <div class="tile-bottom">
+          <i class="small material-icons">cloud</i>
+        </div>
+      </div>
+    </div>
+    <div class="label">
+      <span class="label-text">Files</span>
+      <div class="label-floor"></div>
+    </div>
+    <div class="tiles">
+      <div class="tile background-secondary drop-shadow-light" ng-repeat="file in files">
+        <div class="tile-top">
+          <i class="material-icons">insert_drive_file</i>
+        </div>
+        <div class="tile-content">
+          <span class="tile-text">{{file.name}}</span>
+        </div>
+        <div class="tile-bottom">
+          <i class="small material-icons">cloud</i>
+        </div>
+      </div>
     </div>
   </div>
 </body>

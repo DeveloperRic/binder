@@ -1,5 +1,5 @@
 * {
-  font-family: "Montserrat", Helvetica, Arial, sans-serif;
+  font-family: "Montserrat", sans-serif;
 }
 
 a {
@@ -21,29 +21,25 @@ footer {
 }
 
 h1 {
-  font-family: "Montserrat", Helvetica, Arial, sans-serif;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 600;
 }
 
 h2 {
-  margin-bottom: 20px;
-  font-family: "Montserrat", Helvetica, Arial, sans-serif;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 500;
 }
 
 h3 {
   min-width: 100%;
-  font-family: "Open Sans", Helvetica, Arial, sans-serif;
-  font-style: italic;
-  font-size: 24px;
+  margin-top: 0px;
+  font-size: 18px;
   font-weight: 500;
 }
 
 h4 {
-  font-family: "Open Sans", Helvetica, Arial, sans-serif;
-  font-size: 24px;
+  margin: 0;
+  font-size: 18px;
 }
 
 input {
@@ -131,6 +127,108 @@ ul {
   margin: 10px;
 }
 
+#connectStage {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#connectStage .source {
+  margin: 10px;
+}
+
+#connectStage .redirect {
+  padding: 10px;
+}
+
+#connectStage .redirect .redirect-response {
+  margin-top: 10px;
+}
+
+#connectStage .redirect .redirect-response button {
+  margin-left: 10px;
+}
+
+#connectStage .continue {
+  margin-top: 20px;
+}
+
+#dashboardStage {
+  margin: 10px;
+}
+
+#dashboardStage .label {
+  display: inline-block;
+  margin: 20px 10px 10px 10px;
+  padding: 5px;
+}
+
+#dashboardStage .label .label-text {
+  padding: 0px 5px;
+  font-size: 14px;
+  color: #757575;
+}
+
+#dashboardStage .label .label-floor {
+  min-width: 100%;
+  height: 2px;
+  margin-top: 5px;
+  background-color: #757575;
+}
+
+#dashboardStage .tiles {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+#dashboardStage .tiles .tile {
+  display: flex;
+  min-width: 150px;
+  min-height: 150px;
+  max-width: 150px;
+  max-height: 150px;
+  margin: 5px;
+  flex-direction: column;
+  color: #757575;
+}
+
+#dashboardStage .tiles .tile:hover {
+  background-color: #e0e0e0;
+}
+
+#dashboardStage .tiles .tile .tile-top {
+  margin: 5px;
+  font-size: 11px !important;
+}
+
+#dashboardStage .tiles .tile .tile-content {
+  flex-grow: 1;
+  margin: 10px;
+  text-align: left;
+  overflow: hidden;
+}
+
+#dashboardStage .tiles .tile .tile-bottom {
+  display: flex;
+  margin: 5px;
+  justify-content: flex-end;
+  font-size: 11px !important;
+  color: #9e9e9e;
+}
+
+#dashboardStage .tiles .tile .tile-text {
+  max-height: 60px;
+  overflow-wrap: break-word;
+}
+
+#dashboardStage .folders .folder .folder-text {
+  display: inline-flex;
+  flex-wrap: nowrap;
+}
+
 .background-accent {
   background-color: #4CAF50;
 }
@@ -140,7 +238,7 @@ ul {
 }
 
 .background-secondary {
-  background-color: #bdbdbd;
+  background-color: #fafafa;
 }
 
 .background-secondary-strong {
@@ -159,6 +257,10 @@ ul {
 
 .drop-shadow {
   box-shadow: 1px 1px 10px #bdbdbd;
+}
+
+.drop-shadow-light {
+  box-shadow: 1px 1px 5px #bdbdbd;
 }
 
 .hide {

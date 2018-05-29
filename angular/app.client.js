@@ -18,28 +18,48 @@ client.run(function($rootScope) {
       focused: false,
       onStart: () => {},
       onFinish: () => {}
+    },
+    dashboard: {
+      id: "dashboard",
+      focused: false,
+      onStart: () => {},
+      onFinish: () => {}
     }
   };
   $rootScope.switchStage = function(next, args) {
+    var nextStage;
     for (const i in $rootScope.appStage) {
       if ($rootScope.appStage.hasOwnProperty(i)) {
-        const stage = $rootScope.appStage[i];
+        var stage = $rootScope.appStage[i];
         if (stage.focused) {
           stage.focused = false;
           stage.onFinish(args);
         }
         if (stage.id == next) {
-          stage.focused = true;
-          stage.onStart(args);
+          nextStage = stage;
         }
       }
     }
+    nextStage.focused = true;
+    nextStage.onStart(args);
   };
   $rootScope.user = null;
   $rootScope.emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   $rootScope.validateEmail = function(email) {
     return $rootScope.emailPattern.test(String(email).toLowerCase());
   };
+  $rootScope.sources = [];
+  $rootScope.getSource = sourceid => {
+    var foundSource = null;
+    $rootScope.sources.forEach(source => {
+      if (source.id == sourceid) {
+        foundSource = source;
+      }
+    });
+    return foundSource;
+  };
+  $rootScope.folders = [];
+  $rootScope.files = [];
 });
 
 client.controller("clientCtrl", function($scope, $rootScope) {
@@ -101,17 +121,17 @@ client.controller("welcomeCtrl", function($scope, $rootScope) {
       $scope.postError("Your passwords don't match.");
       return;
     }
-    $.post("api/newuser", {
+    $.post("api/user/newuser", {
       email: $scope.email,
       password: $scope.password
     })
       .done(function(userdata) {
-        $rootScope.user = User.fromJSON(userdata);
+        $rootScope.user = userdata;
         $rootScope.switchStage("connect");
         $rootScope.$apply();
       })
       .fail(function(xhr, status, error) {
-        $scope.postError("Oops! Something went wrong, please try again.");
+        $scope.postError("That email address is already being used.");
       });
   };
   $scope.login = function() {
@@ -139,8 +159,8 @@ client.controller("loginCtrl", function($scope, $rootScope) {
     message: ""
   };
   $scope.postError = function(message) {
-    error.exists = true;
-    error.message = message;
+    $scope.error.exists = true;
+    $scope.error.message = message;
   };
   $scope.login = function() {
     $scope.error.exists = false;
@@ -148,17 +168,156 @@ client.controller("loginCtrl", function($scope, $rootScope) {
       $scope.postError("Your email address is in the wrong format.");
       return;
     }
-    $.post("api/getuser", {
+    $.post("api/user/getuser", {
       email: $scope.email,
       password: $scope.password
     })
       .done(function(data) {
-        $rootScope.user = new User(data.email, data.password);
+        $rootScope.user = data;
         $rootScope.switchStage("connect");
         $rootScope.$apply();
       })
       .fail(function(xhr, status, error) {
-        $scope.postError("Invalid username or password!");
+        $scope.postError("Incorrect username or password.");
+      });
+  };
+});
+
+client.controller("connectCtrl", [
+  "$scope",
+  "$rootScope",
+  "$http",
+  "$window",
+  function($scope, $rootScope, $http, $window) {
+    $scope.stage = $rootScope.appStage.connect;
+    $scope.stage.onStart = function() {
+      if ($rootScope.user.connectedSources.length > 0) {
+        $rootScope.switchStage("dashboard");
+        $rootScope.$apply();
+        return;
+      }
+      $.get("api/source/listsources", {})
+        .done(function(data) {
+          $rootScope.sources = JSON.parse(data);
+          $rootScope.$apply();
+        })
+        .fail(function(xhr, status, error) {
+          $window.alert("Couldn't load sources.");
+        });
+    };
+    $scope.redirectReady = false;
+    $scope.redirectURL = "";
+    $scope.selected = null;
+    $scope.onSelect = function(sourceid) {
+      $scope.selected = $rootScope.getSource(sourceid);
+      $http
+        .post("api/source/beginconnect", {
+          sourceid: sourceid,
+          uid: $rootScope.user.uid
+        })
+        .then(
+          response => {
+            if (response.status == 206) {
+              $scope.redirectReady = true;
+              $scope.redirectURL = response.data;
+            } else {
+              $scope.onConnect();
+            }
+          },
+          error => {
+            $window.alert("(" + error.status + ") -> " + error.data);
+          }
+        );
+    };
+    $scope.onRedirect = () => {
+      $window.open($scope.redirectURL);
+      $scope.responseReady = true;
+    };
+    $scope.responseReady = false;
+    $scope.authcode = "";
+    $scope.onResponse = () => {
+      $http
+        .post("api/source/finishconnect", {
+          sourceid: $scope.selected.id,
+          uid: $rootScope.user.uid,
+          code: $scope.authcode
+        })
+        .then(
+          response => {
+            if (response.status == 201) {
+              $scope.onConnect();
+            }
+          },
+          error => {
+            $window.alert("(" + error.status + ") -> " + error.data);
+          }
+        );
+    };
+    $scope.onConnect = function() {
+      console.log("Connected! Yayyy");
+      $scope.responseReady = false;
+      $scope.authcode = "";
+      $scope.redirectReady = false;
+    };
+    $scope.sourceConnected = function(sourceid) {
+      return $rootScope.user.connectedSources.includes(sourceid);
+    };
+    $scope.hasConnected = function() {
+      return (
+        $rootScope.user != null && $rootScope.user.connectedSources.length > 0
+      );
+    };
+    $scope.onContinue = function() {
+      $rootScope.switchStage("dashboard");
+    };
+  }
+]);
+
+client.controller("dashboardCtrl", function($scope, $rootScope, $window) {
+  $scope.stage = $rootScope.appStage.dashboard;
+  $scope.ctrl = "Hiiiiiiii";
+  $scope.stage.onStart = () => {
+    // $rootScope.folders = [
+    //   "CUHacking 2019 Positions",
+    //   "Everything You Need To Know At A MLH Event",
+    //   "All ideas and notes from Idea Growr (text)",
+    //   "My Resume [Software Eng].pdf",
+    //   "Executive Positions and Directorships",
+    //   "PSYC 1001 Ch5 - Consciousness.docx",
+    //   "OLAITAN_VICTOR_PSYC1001R.docxabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
+    //   "OLAITAN_VICTOR GRADED.docx",
+    //   "CGSC1001 Quiz 3 Review.docx",
+    //   "CGSC1001 Lec 12 - Evolutionary Psychology.docx"
+    // ];
+    // $scope.$apply();
+    $.post("api/source/startfolderlist", {
+      uid: $rootScope.user.uid
+    })
+      .done(function(data) {
+        var list = JSON.parse(data);
+        list.forEach(folder => {
+          $rootScope.folders.push(folder);
+        });
+        $rootScope.$apply();
+      })
+      .fail(function(xhr, status, error) {
+        $window.alert("Couldn't load folders");
+        console.log(error);
+      });
+    $.post("api/source/startfilelist", {
+      uid: $rootScope.user.uid
+    })
+      .done(function(data) {
+        var list = JSON.parse(data);
+        list.forEach(file => {
+          $rootScope.files.push(file);
+        });
+        console.log(list[5]);
+        $rootScope.$apply();
+      })
+      .fail(function(xhr, status, error) {
+        $window.alert("Couldn't load files");
+        console.log(error);
       });
   };
 });

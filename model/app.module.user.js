@@ -1,19 +1,17 @@
 class User {
-  constructor(uid, email, password) {
+  constructor(uid, email, password, connectedSources) {
     this.uid = uid;
     this.email = email;
     this.password = password;
-  }
-
-  static fromJSON(userdata) {
-    return new User(userdata.uid, userdata.email, userdata.password);
+    this.connectedSources = connectedSources;
   }
 
   toJSON() {
     return {
       uid: this.uid,
       email: this.email,
-      password: this.password
+      password: this.password,
+      connectedSources: this.connectedSources
     };
   }
 }
