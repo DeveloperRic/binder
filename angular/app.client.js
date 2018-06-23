@@ -1,5 +1,5 @@
-var client = angular.module("client", []);
-client.run(function($rootScope) {
+var client = angular.module("client", ["ui.bootstrap.contextMenu"]);
+client.run(function($rootScope, $location) {
   $rootScope.appStage = {
     welcome: {
       id: "welcome",
@@ -41,7 +41,18 @@ client.run(function($rootScope) {
       }
     }
     nextStage.focused = true;
-    nextStage.onStart(args);
+    // $location.path(next);
+    // if (args) {
+    //   $location.search(JSON.stringify(args));
+    // } else {
+    //   $location.search({});
+    // }
+    // $location.replace();
+    if (args) {
+      nextStage.onStart(args);
+    } else {
+      nextStage.onStart({});
+    }
   };
   $rootScope.user = null;
   $rootScope.emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -58,18 +69,44 @@ client.run(function($rootScope) {
     });
     return foundSource;
   };
-  $rootScope.folders = [];
-  $rootScope.files = [];
 });
 
-client.controller("clientCtrl", function($scope, $rootScope) {
+client.controller("clientCtrl", function($scope, $rootScope, $location) {
   $scope.navButtons = [
     {
       url: "test.html",
       text: "Test Page"
     }
   ];
-  $rootScope.switchStage("welcome");
+  if ($location.path() == "") {
+    $rootScope.switchStage("welcome");
+  } else {
+    if ($location.search()) {
+      $rootScope.switchStage($location.path().replace("/", ""));
+    } else {
+      $rootScope.switchStage($location.path().replace("/", ""));
+    }
+  }
+  $scope.extendGDriveScope = function() {
+    $.put("api/source/gdrive/extendscope", {
+      uid: $rootScope.user.uid
+    })
+      .done(function(userdata) {
+        $rootScope.user = userdata;
+        $rootScope.switchStage("connect", {
+          forceUpdate: true,
+          updateSources: ["gdrive"]
+        });
+      })
+      .fail(function(xhr, status, error) {
+        console.log(
+          "Failed to extend user " +
+            $rootScope.user.uid +
+            "'s gdrive scope!\n" +
+            xhr.responseText
+        );
+      });
+  };
 });
 
 $(document).ready(function() {
@@ -135,7 +172,11 @@ client.controller("welcomeCtrl", function($scope, $rootScope) {
       });
   };
   $scope.login = function() {
-    $rootScope.switchStage("login", { fromWelcome: true });
+    $rootScope.switchStage("login", {
+      fromWelcome: true,
+      email: $scope.email,
+      password: $scope.password
+    });
   };
 });
 
@@ -147,6 +188,8 @@ client.controller("loginCtrl", function($scope, $rootScope) {
       $scope.return = function() {
         $rootScope.switchStage("welcome");
       };
+      // $scope.email = args.email;
+      // $scope.password = args.password;
     }
   };
 
@@ -179,6 +222,7 @@ client.controller("loginCtrl", function($scope, $rootScope) {
       })
       .fail(function(xhr, status, error) {
         $scope.postError("Incorrect username or password.");
+        $scope.$apply();
       });
   };
 });
@@ -190,8 +234,8 @@ client.controller("connectCtrl", [
   "$window",
   function($scope, $rootScope, $http, $window) {
     $scope.stage = $rootScope.appStage.connect;
-    $scope.stage.onStart = function() {
-      if ($rootScope.user.connectedSources.length > 0) {
+    $scope.stage.onStart = function(args) {
+      if ($rootScope.user.connectedSources.length > 0 && !args.forceUpdate) {
         $rootScope.switchStage("dashboard");
         $rootScope.$apply();
         return;
@@ -199,6 +243,16 @@ client.controller("connectCtrl", [
       $.get("api/source/listsources", {})
         .done(function(data) {
           $rootScope.sources = JSON.parse(data);
+          $rootScope.sources.forEach(source => {
+            $scope.sourceConnected[
+              source
+            ] = $rootScope.user.connectedSources.includes(source);
+          });
+          if (args.updateSources) {
+            args.updateSources.forEach(source => {
+              $scope.sourceConnected[source] = false;
+            });
+          }
           $rootScope.$apply();
         })
         .fail(function(xhr, status, error) {
@@ -244,28 +298,26 @@ client.controller("connectCtrl", [
         })
         .then(
           response => {
-            if (response.status == 201) {
-              $scope.onConnect();
-            }
+            $rootScope.user = response.data;
+            $scope.onConnect($scope.selected.id);
           },
           error => {
             $window.alert("(" + error.status + ") -> " + error.data);
           }
         );
     };
-    $scope.onConnect = function() {
-      console.log("Connected! Yayyy");
+    $scope.hasConnected = false;
+    $scope.onConnect = function(sourceid) {
       $scope.responseReady = false;
       $scope.authcode = "";
       $scope.redirectReady = false;
+      $scope.sourceConnected[sourceid] = true;
+      $scope.hasConnected = true;
     };
-    $scope.sourceConnected = function(sourceid) {
-      return $rootScope.user.connectedSources.includes(sourceid);
-    };
-    $scope.hasConnected = function() {
-      return (
-        $rootScope.user != null && $rootScope.user.connectedSources.length > 0
-      );
+    $scope.sourceConnected = {
+      gdrive: false,
+      onedrive: false,
+      onedrive365: false
     };
     $scope.onContinue = function() {
       $rootScope.switchStage("dashboard");
@@ -275,49 +327,186 @@ client.controller("connectCtrl", [
 
 client.controller("dashboardCtrl", function($scope, $rootScope, $window) {
   $scope.stage = $rootScope.appStage.dashboard;
-  $scope.ctrl = "Hiiiiiiii";
-  $scope.stage.onStart = () => {
-    // $rootScope.folders = [
-    //   "CUHacking 2019 Positions",
-    //   "Everything You Need To Know At A MLH Event",
-    //   "All ideas and notes from Idea Growr (text)",
-    //   "My Resume [Software Eng].pdf",
-    //   "Executive Positions and Directorships",
-    //   "PSYC 1001 Ch5 - Consciousness.docx",
-    //   "OLAITAN_VICTOR_PSYC1001R.docxabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
-    //   "OLAITAN_VICTOR GRADED.docx",
-    //   "CGSC1001 Quiz 3 Review.docx",
-    //   "CGSC1001 Lec 12 - Evolutionary Psychology.docx"
-    // ];
-    // $scope.$apply();
-    $.post("api/source/startfolderlist", {
-      uid: $rootScope.user.uid
-    })
-      .done(function(data) {
-        var list = JSON.parse(data);
-        list.forEach(folder => {
-          $rootScope.folders.push(folder);
-        });
-        $rootScope.$apply();
-      })
-      .fail(function(xhr, status, error) {
-        $window.alert("Couldn't load folders");
-        console.log(error);
-      });
+  $scope.stage.onStart = args => {
+    if (args.pageStack) {
+      $scope.pageStack = args.pageStack;
+      $scope.openFolder($scope.pageStack.pop().id);
+    } else {
+      $scope.openFolder("root");
+    }
+  };
+  $scope.files = [];
+  $scope.pageStack = [];
+  $scope.openFolder = function(folderId) {
     $.post("api/source/startfilelist", {
-      uid: $rootScope.user.uid
+      uid: $rootScope.user.uid,
+      folderId: folderId
     })
       .done(function(data) {
-        var list = JSON.parse(data);
-        list.forEach(file => {
-          $rootScope.files.push(file);
+        $scope.pageStack.push({
+          source: "gdrive",
+          id: folderId
         });
-        console.log(list[5]);
-        $rootScope.$apply();
+        $scope.canReturn = $scope.pageStack.length > 1;
+
+        var list = JSON.parse(data);
+        $scope.files.length = 0;
+        let tempFiles = [];
+        list.forEach(file => {
+          if (file.mimeType == "application/vnd.google-apps.folder") {
+            $scope.files.push({
+              isFolder: true,
+              dat: file
+            });
+          } else {
+            tempFiles.push({
+              isFolder: false,
+              dat: file
+            });
+          }
+        });
+        tempFiles.forEach(file => $scope.files.push(file));
+        $scope.$apply();
       })
       .fail(function(xhr, status, error) {
         $window.alert("Couldn't load files");
-        console.log(error);
+        console.log(xhr.responseText);
+      });
+  };
+  $scope.canReturn = false;
+  $scope.return = function() {
+    $scope.pageStack.pop();
+    $scope.openFolder($scope.pageStack.pop().id);
+    $scope.canReturn = $scope.pageStack.length > 1;
+  };
+  $scope.onFileClick = function(file) {
+    if (file.isFolder) {
+      $scope.openFolder(file.dat.id);
+    } else {
+      $window.open(file.dat.webViewLink, "_blank");
+    }
+  };
+  $scope.onFileRightClick = function(file) {
+    if (file.isFolder) {
+      $scope.openFolder(file.dat.id);
+    } else {
+      $window.open(file.dat.webViewLink, "_blank");
+    }
+  };
+  $scope.fileContextMenu = function(file) {
+    return [
+      {
+        text: "Preview",
+        displayed: !file.isFolder,
+        click: function($itemScope, $event, modelValue, text, $li) {
+          $window.alert("Feature disabled for now");
+        }
+      },
+      {
+        text: "Explore",
+        displayed: file.isFolder,
+        click: function($itemScope, $event, modelValue, text, $li) {
+          $scope.openFolder(file.dat.id);
+        }
+      },
+      {
+        text: "Open file",
+        click: function($itemScope, $event, modelValue, text, $li) {
+          $window.open(file.dat.webViewLink, "_blank");
+        }
+      },
+      {
+        text: "Details",
+        displayed: !file.isFolder,
+        click: function($itemScope, $event, modelValue, text, $li) {
+          $scope.showFileDetails($scope.files[$itemScope.$index]);
+        }
+      },
+      {
+        text: "Download",
+        displayed: !file.isFolder,
+        click: function() {
+          $.post("api/source/getfilemetadata", {
+            uid: $rootScope.user.uid,
+            fileId: file.dat.id,
+            keys: ["webContentLink"]
+          })
+            .done(function(data) {
+              $window.open(JSON.parse(data).webContentLink, "_blank");
+            })
+            .fail(function(xhr, status, error) {
+              $window.alert("Couldn't get download link");
+              console.log(JSON.parse(xhr.responseText));
+            });
+        }
+      }
+    ];
+  };
+  $scope.detailsFile = null;
+  $scope.showFileDetails = function(detailsFile) {
+    $scope.detailsFile = detailsFile;
+    document.getElementById("fileDetailsPane").classList.remove("hide");
+
+    $.post("api/source/getfilemetadata", {
+      uid: $rootScope.user.uid,
+      fileId: detailsFile.dat.id,
+      keys: [
+        "thumbnailLink",
+        "description",
+        "starred",
+        "version",
+        "size",
+        "modifiedTime",
+        "lastModifyingUser"
+      ]
+    })
+      .done(function(data) {
+        $scope.detailsFile.dat = $.extend(
+          $scope.detailsFile.dat,
+          JSON.parse(data)
+        );
+        $scope.$apply();
+      })
+      .fail(function(xhr, status, error) {
+        $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file thumbnail.";
+        console.log(JSON.parse(xhr.responseText));
+      });
+  };
+  $scope.onMainPaneClick = function() {
+    $scope.detailsFile = null;
+    document.getElementById("fileDetailsPane").classList.add("hide");
+  };
+  $scope.formatFileSize = function(size) {
+    return size + " bytes";
+  };
+  $scope.formatFileModifiedTime = function(datetime) {
+    if (datetime) {
+      return new Date(datetime).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    }
+  };
+  $scope.toggleFileStarred = function(file) {
+    $.post("api/source/updatefilemetadata", {
+      uid: $rootScope.user.uid,
+      fileId: file.dat.id,
+      metadata: {
+        starred: true
+      }
+    })
+      .done(function(data) {
+        file.dat = $.extend(
+          file.dat,
+          JSON.parse(data)
+        );
+        $scope.$apply();
+        console.log(file.dat.starred);
+      })
+      .fail(function(xhr, status, error) {
+        console.log(JSON.parse(xhr.responseText));
       });
   };
 });

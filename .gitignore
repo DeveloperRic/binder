@@ -1,4 +1,2 @@
 
-node/app.server.source.gdrive.client_secret.json
-node/app.server.source.gdrive.credentials.json
-node/app.server.user.users.json
+server_data/*

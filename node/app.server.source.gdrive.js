@@ -2,9 +2,9 @@ const fs = require("fs");
 const readline = require("readline");
 const { google } = require("googleapis");
 
-// If modifying these scopes, delete gdrive.credentials.json.
-const SCOPES = ["https://www.googleapis.com/auth/drive.metadata.readonly"];
-const TOKEN_PATH = "node/app.server.source.gdrive.credentials.json";
+const udb = require("../node/app.server.user");
+
+const TOKEN_PATH = "server_data/app.server.source.gdrive.credentials.json";
 const drive = google.drive({ version: "v3" });
 
 var client_secret;
@@ -14,10 +14,16 @@ var redirect_uris;
 var userTokens = [];
 var authSessions = [];
 
+// If modifying a user's scope, delete their credentials from gdrive.credentials.json.
+const SCOPE_LEVELS = [
+  ["https://www.googleapis.com/auth/drive.metadata.readonly"],
+  ["https://www.googleapis.com/auth/drive"]
+];
+
 exports.init = function() {
   // Load client secrets from a local file.
   fs.readFile(
-    "node/app.server.source.gdrive.client_secret.json",
+    "server_data/app.server.source.gdrive.client_secret.json",
     (err, content) => {
       if (err) return console.log("Error loading client secret file: ", err);
       const credentials = JSON.parse(content);
@@ -49,6 +55,15 @@ function setUserToken(uid, token) {
   var userToken = getUserToken(uid);
   if (userToken == null) {
     userTokens.push({ uid: uid, token: token });
+  } else if (token == null) {
+    var newArray = [];
+    userTokens.forEach(utoken => {
+      if (utoken.uid != uid) {
+        newArray.push(utoken);
+      }
+    });
+    userTokens.length = 0;
+    newArray.forEach(utoken => userTokens.push(utoken));
   } else {
     userToken = token;
   }
@@ -99,7 +114,7 @@ exports.beginAuthorize = function(uid, onPrompt, onSuccess) {
 function getAccessToken(uid, oAuth2Client, onPrompt) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: SCOPES
+    scope: SCOPE_LEVELS[udb.getUserWithUID(uid).drive.scopeLevel]
   });
   var authSession = getAuthSession(uid);
   if (authSession != null) {
@@ -116,6 +131,7 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
     var oAuth2Client = authSession.authclient;
     oAuth2Client.getToken(code, (err, token) => {
       if (err) {
+        console.log(err);
         onFail(err);
       } else {
         oAuth2Client.setCredentials(token);
@@ -128,17 +144,42 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
   }
 };
 
-exports.listFolders = function(uid, onSuccess, onFail) {
+exports.extendScope = function(uid, onComplete) {
+  var user = udb.getUserWithUID(uid);
+  user.drive.scopeLevel = 1;
+  setUserToken(uid, null);
+  onComplete(user);
+};
+
+exports.listFiles = function(uid, folderId, onSuccess, onFail) {
   drive.files.list(
     {
       auth: getAuth(uid),
+      orderBy: "folder,name",
       pageSize: 10,
-      q: "mimeType='application/vnd.google-apps.folder'",
-      fields: "nextPageToken, files(id, name, mimeType, parents)"
+      q: "'" + folderId + "' in parents",
+      fields: "nextPageToken, files(id, name, mimeType, webViewLink, iconLink)"
     },
-    (err, {data}) => {
+    (err, res) => {
       if (err) {
         onFail(err);
+      } else {
+        onSuccess(res);
+      }
+    }
+  );
+};
+
+exports.getFile = function(uid, fileId, onSuccess, onFail) {
+  drive.files.get(
+    {
+      auth: getAuth(uid),
+      fileId: fileId,
+      fields: "items(id, name)"
+    },
+    (error, data) => {
+      if (error) {
+        onFail(error);
       } else {
         onSuccess(data);
       }
@@ -146,19 +187,41 @@ exports.listFolders = function(uid, onSuccess, onFail) {
   );
 };
 
-exports.listFiles = function(uid, onSuccess, onFail) {
-  drive.files.list(
+exports.getFileMetadata = function(uid, fileId, keys, onSuccess, onFail) {
+  var fields = "id";
+  if (keys.length > 0) {
+    keys.forEach(key => {
+      fields += ", " + key;
+    });
+  }
+  drive.files.get(
     {
       auth: getAuth(uid),
-      pageSize: 10,
-      q: "mimeType!='application/vnd.google-apps.folder'",
-      fields: "nextPageToken, files(id, name, parents)"
+      fileId: fileId,
+      fields: fields
     },
-    (err, {data}) => {
+    (err, res) => {
       if (err) {
         onFail(err);
       } else {
-        onSuccess(data);
+        onSuccess(res);
+      }
+    }
+  );
+};
+
+exports.updateFileMetadata = function(uid, fileId, metadata, onSuccess, onFail) {
+  drive.files.update(
+    {
+      auth: getAuth(uid),
+      fileId: fileId,
+      metadata: metadata
+    }, (err, res) => {
+      if (err) {
+        console.log(JSON.stringify(err));
+        onFail(err);
+      } else {
+        onSuccess(res);
       }
     }
   );

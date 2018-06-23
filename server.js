@@ -13,6 +13,7 @@ app.use("/angular", express.static("./angular"));
 app.use("/css", express.static("./css"));
 app.use("/html", express.static("./html"));
 app.use("/model", express.static("./model"));
+app.use("/modules", express.static("./node_modules"));
 app.use(bodyParser.json());
 app.use(
   bodyParser.urlencoded({
@@ -87,10 +88,10 @@ app.route("/api/source/finishconnect").post((req, res) => {
         user.connectedSources.push(req.body.sourceid);
         udb.saveUsers();
       }
-      res.sendStatus(200);
+      res.status(200).send(user);
     },
     error => {
-      res.status(error.error.code).send(JSON.stringify(error.error));
+      res.status(error.code).send(JSON.stringify(error.errors));
     }
   );
   if (result != 100) {
@@ -98,10 +99,17 @@ app.route("/api/source/finishconnect").post((req, res) => {
   }
 });
 
-app.route("/api/source/startfolderlist").post((req, res) => {
-  sdb.listFolders(
+app.route("/api/source/gdrive/extendscope").put((req, res) => {
+  sdb.extendGDriveScope(req.body.uid, user => {
+    res.status(200).send(user);
+  });
+});
+
+app.route("/api/source/startfilelist").post((req, res) => {
+  sdb.listFiles(
     req.body.uid,
-    data => {
+    req.body.folderId,
+    ({ data }) => {
       res.status(200).send(JSON.stringify(data.files));
     },
     error => {
@@ -110,11 +118,27 @@ app.route("/api/source/startfolderlist").post((req, res) => {
   );
 });
 
-app.route("/api/source/startfilelist").post((req, res) => {
-  sdb.listFiles(
+app.route("/api/source/getfilemetadata").post((req, res) => {
+  sdb.getFileMetadata(
     req.body.uid,
-    data => {
-      res.status(200).send(JSON.stringify(data.files));
+    req.body.fileId,
+    req.body.keys,
+    ({ data }) => {
+      res.status(200).send(JSON.stringify(data));
+    },
+    error => {
+      res.status(error.code).send(JSON.stringify(error.errors));
+    }
+  );
+});
+
+app.route("/api/source/updatefilemetadata").post((req, res) => {
+  sdb.updateFileMetadata(
+    req.body.uid,
+    req.body.fileId,
+    req.body.metadata,
+    ({ data }) => {
+      res.status(200).send(JSON.stringify(data));
     },
     error => {
       res.status(error.code).send(JSON.stringify(error.errors));

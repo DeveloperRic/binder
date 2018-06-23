@@ -1,7 +1,6 @@
 const fs = require("fs");
-User = require("../model/app.module.user");
 
-const USERS_FILE_PATH = "node/app.server.user.users.json";
+const USERS_FILE_PATH = "server_data/app.server.user.users.json";
 var users = [];
 
 exports.loadUsers = function() {
@@ -14,9 +13,9 @@ exports.newUser = function(email, password) {
     user: null
   };
   if (this.getUserWithEmailPassword(email, password).user == null) {
-    var user = new User(users.length, email, password, []);
+    var user = newUserObject(users.length, email, password, [], 0);
     users.push(user);
-    saveUsers();
+    this.saveUsers();
     result = {
       access: true,
       user: user
@@ -67,4 +66,16 @@ exports.saveUsers = function() {
   fs.writeFile(USERS_FILE_PATH, JSON.stringify(users), err => {
     if (err) console.error(err);
   });
+};
+
+function newUserObject(uid, email, password, connectedSources, driveScopeLevel) {
+  return {
+    uid: uid,
+    email: email,
+    password: password,
+    connectedSources: connectedSources,
+    drive: {
+      scopeLevel: driveScopeLevel
+    }
+  };
 }

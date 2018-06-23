@@ -15,43 +15,92 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
 
+  <script src="../modules/angular-bootstrap-contextmenu/contextMenu.js"></script>
   <script src="../angular/app.client.js"></script>
-  <script src="../model/app.module.user.js"></script>
 </head>
-<nav id="nav" class="navbar navbar-fixed-top background-accent text-color-inverse">
-  <div class="nav-logoTitle">
-    <span class="nav-title">Binder</span>
-  </div>
-  <div class="nav-buttons">
-    <div class="nav-button" ng-repeat="item in navButtons">
-      <a href={{item.url}} class="text-color-inverse">{{item.text}}</a>
-    </div>
-  </div>
-</nav>
 
 <body>
-  <div id="welcomeStage" class="w3-container center" ng-controller="welcomeCtrl" ng-show="stage.focused">
-    <div class="create-account" ng-show="!userFound">
-      <h1>Hi! This is Binder!</h1>
-      <h2>Get started by creating an account</h2>
-      <form name="createAccountForm">
+  <div id="nav" class="background-accent">
+    <div class="nav-title background-secondary text-color-primary">Binder</div>
+    <div class="nav-buttons">
+      <div class="nav-button background-accent-light" ng-repeat="item in navButtons">
+        <a href="{{item.url}}" class="text-color-inverse">{{item.text}}</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="stages">
+    <div id="welcomeStage" class="stage center" ng-controller="welcomeCtrl" ng-show="stage.focused">
+      <div class="create-account" ng-show="!userFound">
+        <h1>Hi! This is Binder!</h1>
+        <h2>Get started by creating an account</h2>
+        <form name="createAccountForm">
+          <table class="center-content background-primary">
+            <tr>
+              <td>Email Address</td>
+              <td>
+                <div class="input">
+                  <input type="email" name="email" ng-model="email" required placeholder="email@example.com" />
+                  <div class="label-floor"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Password</td>
+              <td>
+                <div class="input">
+                  <input type="password" name="password" ng-model="password" required />
+                  <div class="label-floor"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Confirm password</td>
+              <td>
+                <div class="input">
+                  <input type="password" name="passwordconfirm" ng-model="passwordconfirm" required />
+                  <div class="label-floor"></div>
+                </div>
+              </td>
+            </tr>
+            <tr class="center-content">
+              <td>
+                <div class="error" ng-show="error.exists">{{error.message}}</div>
+              </td>
+            </tr>
+            <tr class="center-content">
+              <td>
+                <button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="createAccount()">Create Account</button>
+                or
+                <button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="login()">Go to Login</button>
+              </td>
+            </tr>
+          </table>
+        </form>
+      </div>
+    </div>
+
+    <div id="loginStage" class="stage center" ng-controller="loginCtrl" ng-show="stage.focused">
+      <h1>Welcome back!</h1>
+      <h2>Let's get you signed in...</h2>
+      <form name="loginForm">
         <table class="center-content background-primary">
           <tr>
             <td>Email Address</td>
             <td>
-              <input type="email" name="email" ng-model="email" required placeholder="email@example.com" />
+              <div class="input">
+                <input type="email" name="email" ng-model="email" required placeholder="email@example.com" />
+                <div class="label-floor"></div>
+              </div>
             </td>
           </tr>
           <tr>
             <td>Password</td>
             <td>
-              <input type="password" name="password" ng-model="password" required />
-            </td>
-          </tr>
-          <tr>
-            <td>Confirm password</td>
-            <td>
-              <input type="password" name="passwordconfirm" ng-model="passwordconfirm" required />
+              <div class="input">
+                <input type="password" name="password" ng-model="password" required />
+                <div class="label-floor"></div>
+              </div>
             </td>
           </tr>
           <tr class="center-content">
@@ -61,96 +110,83 @@
           </tr>
           <tr class="center-content">
             <td>
-              <button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="createAccount()">Create Account</button>
-              or
               <button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="login()">Login</button>
             </td>
           </tr>
         </table>
       </form>
     </div>
-  </div>
-  <div id="loginStage" class="w3-container center" ng-controller="loginCtrl" ng-show="stage.focused">
-    <div class="login-stage background-accent drop-shadow text-color-inverse">
-      <button class="btn return text-color-primary background-primary" ng-show="canReturn" ng-click="return()">
-        <i class="material-icons">arrow_back</i>
-      </button>
-      <form name="loginForm">
-        <table class="center-content text-color-inverse">
-          <tr>
-            <td>Email Address</td>
-            <td>
-              <input type="email" name="email" ng-model="email" required placeholder="email@example.com" />
-            </td>
-          </tr>
-          <tr>
-            <td>Password</td>
-            <td>
-              <input type="password" name="password" ng-model="password" required />
-            </td>
-          </tr>
-          <tr class="center-content">
-            <td>
-              <div class="error" ng-show="error.exists">{{error.message}}</div>
-            </td>
-          </tr>
-          <tr class="center-content">
-            <td>
-              <button type="submit" class="btn create-account-submit text-color-primary background-primary" ng-click="login()">Login</button>
-            </td>
-          </tr>
-        </table>
-      </form>
-    </div>
-  </div>
-  <div id="connectStage" class="w3-container center" ng-controller="connectCtrl" ng-show="stage.focused">
-    <h2>Let's Connect!</h2>
-    <h3>Select the cloud storage services you use</h3>
-    <div>
-      <button class="btn source" ng-repeat="source in sources" ng-click="onSelect(source.id)" ng-disabled="sourceConnected(source.id)"
-        ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected(source.id)]">{{source.name}}</button>
-    </div>
-    <div class="redirect background-secondary" ng-show="redirectReady">
-      <button class="btn background-primary" ng-click="onRedirect()">Click to sign into {{selected.name}}</button>
-      <div class="redirect-response" ng-show="responseReady">
-        <input type="text" name="authcode" ng-model="authcode" placeholder="Paste your code here" />
-        <button class="btn background-primary" ng-click="onResponse()">Connect!</button>
+
+    <div id="connectStage" class="stage center" ng-controller="connectCtrl" ng-show="stage.focused">
+      <h2>Let's Connect!</h2>
+      <h3>Select the cloud storage services you use</h3>
+      <div>
+        <button class="btn source" ng-click="onSelect('gdrive')" ng-disabled="sourceConnected.gdrive" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.gdrive]">Google Drive</button>
+        <button class="btn source" ng-click="onSelect('onedrive')" ng-disabled="sourceConnected.onedrive" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.onedrive]">Onedrive</button>
+        <button class="btn source" ng-click="onSelect('onedrive365')" ng-disabled="sourceConnected.onedrive365" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.onedrive365]">Office 365</button>
       </div>
-    </div>
-    <button class="btn continue text-color-inverse background-accent" ng-disabled="!hasConnected()" ng-click="onContinue()">Continue to dashboard</button>
-  </div>
-  <div id="dashboardStage" ng-controller="dashboardCtrl" ng-show="stage.focused">
-    <div class="label">
-      <span class="label-text">Folders</span>
-      <div class="label-floor"></div>
-    </div>
-    <div class="tiles">
-      <div class="tile background-secondary drop-shadow-light" ng-repeat="folder in folders">
-        <div class="tile-top">
-          <i class="material-icons">folder</i>
-        </div>
-        <div class="tile-content">
-          <span class="tile-text">{{folder.name}}</span>
-        </div>
-        <div class="tile-bottom">
-          <i class="small material-icons">cloud</i>
+      <div class="redirect background-secondary" ng-show="redirectReady">
+        <button class="btn background-primary" ng-click="onRedirect()">Click to sign into {{selected.name}}</button>
+        <div class="redirect-response" ng-show="responseReady">
+          <input type="text" name="authcode" ng-model="authcode" placeholder="Paste your code here" />
+          <button class="btn background-primary" ng-click="onResponse()">Connect!</button>
         </div>
       </div>
+      <button class="btn continue text-color-inverse background-accent" ng-disabled="!hasConnected" ng-click="onContinue()">Continue to dashboard</button>
     </div>
-    <div class="label">
-      <span class="label-text">Files</span>
-      <div class="label-floor"></div>
-    </div>
-    <div class="tiles">
-      <div class="tile background-secondary drop-shadow-light" ng-repeat="file in files">
-        <div class="tile-top">
-          <i class="material-icons">insert_drive_file</i>
+
+    <div id="dashboardStage" class="stage" ng-controller="dashboardCtrl" ng-show="stage.focused">
+      <div id="fileDetailsPane" class="hide background-secondary drop-shadow">
+        <div class="file-thumbnail background-secondary-light">
+          <div class="file-thumbnail-text" ng-show="!detailsFile.dat.thumbnailLink">
+            <span class="text-muted">File thumbnails require extended permissions</span>
+            <br/>
+            <a class="file-thumbnail-text-link text-color-accent" ng-click="extendGDriveScope()">Click here to give Binder more access</a>
+          </div>
+          <img src="{{detailsFile.dat.thumbnailLink}}" alt="{{detailsFile.thumbnailLinkAlt}}" ng-show="detailsFile.dat.thumbnailLink"
+          />
         </div>
-        <div class="tile-content">
-          <span class="tile-text">{{file.name}}</span>
+        <div class="file-info">
+          <div>
+            <div class="file-info-head">
+              <span class="file-info-title" ng-click="onFileClick(detailsFile)">{{detailsFile.dat.name}}</span>
+              <div class="file-info-starred" ng-click="toggleFileStarred(detailsFile)">
+                <i class="material-icons" ng-show="detailsFile.dat.starred" ng-click="toggleStarred(false)">star</i>
+                <i class="material-icons" ng-show="!detailsFile.dat.starred" ng-click="toggleStarred(true)">star_border</i>
+              </div>
+            </div>
+            <h4>{{detailsFile.dat.description}}</h4>
+            <span class="version text-muted" ng-show="detailsFile.dat.version != 0">Version: {{detailsFile.dat.version}}</span>
+          </div>
+          <div class="file-info-properties background-secondary-light">
+            Size: {{formatFileSize(detailsFile.dat.size)}}
+            <div class="modified">
+              <span class="modified-time">Modified: {{formatFileModifiedTime(detailsFile.dat.modifiedTime)}}</span>
+              <span class="modified-by text-muted"> by: {{detailsFile.dat.lastModifyingUser.displayName}}</span>
+            </div>
+          </div>
         </div>
-        <div class="tile-bottom">
-          <i class="small material-icons">cloud</i>
+      </div>
+      <div class="mainPane" ng-click="onMainPaneClick()">
+        <button class="btn return text-color-primary background-primary" ng-show="canReturn" ng-click="return()">
+          <i class="large material-icons">arrow_back</i>
+        </button>
+        <div class="label">
+          <span class="label-text">Files</span>
+          <div class="label-floor"></div>
+        </div>
+        <div class="file-tray">
+          <div class="tile background-secondary drop-shadow-light" ng-repeat="file in files" ng-click="onFileClick(file)" context-menu="fileContextMenu(file)">
+            <div class="tile-top">
+              <img src="{{file.dat.iconLink}}" />
+            </div>
+            <div class="tile-content">
+              <span class="tile-text">{{file.dat.name}}</span>
+            </div>
+            <div class="tile-bottom">
+              <i class="small material-icons">cloud</i>
+            </div>
+          </div>
         </div>
       </div>
     </div>

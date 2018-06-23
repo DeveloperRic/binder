@@ -1,4 +1,4 @@
-Source = require("../model/app.module.source");
+Source = require("../model/app.model.source");
 const gdrive = require("./app.server.source.gdrive");
 
 var sources = [
@@ -53,10 +53,18 @@ var finishConnectGDrive = function(uid, code, onSuccess, onFail) {
   gdrive.finishAuthorize(uid, code, onSuccess, onFail);
 };
 
-exports.listFolders = function(uid, onSuccess, onFail) {
-  gdrive.listFolders(uid, onSuccess, onFail);
+exports.listFiles = function(uid, folderId, onSuccess, onFail) {
+  gdrive.listFiles(uid, folderId, onSuccess, onFail);
 };
 
-exports.listFiles = function(uid, onSuccess, onFail) {
-  gdrive.listFiles(uid, onSuccess, onFail);
+exports.extendGDriveScope = function(uid, onComplete) {
+  gdrive.extendScope(uid, onComplete);
+};
+
+exports.getFileMetadata = function(uid, fileId, keys, onSuccess, onFail) {
+  gdrive.getFileMetadata(uid, fileId, keys, onSuccess, onFail);
+};
+
+exports.updateFileMetadata = function(uid, fileId, metadata, onSuccess, onFail) {
+  gdrive.updateFileMetadata(uid, fileId, metadata, onSuccess, onFail);
 };
