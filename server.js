@@ -8,6 +8,8 @@ const sdb = require("./node/app.server.source");
 
 var app = express();
 
+// DON'T FORGET TO MAKE THIS WEB APP HTTPS!!!
+
 //app.use("/node", express.static("./node"));
 app.use("/angular", express.static("./angular"));
 app.use("/css", express.static("./css"));
@@ -37,10 +39,27 @@ app.route("/api/user/newuser").post((req, res) => {
   }
 });
 
-app.route("/api/user/getuser").post((req, res) => {
+app.route("/api/user/loginuser").post((req, res) => {
   //var q = url.parse(req.url, true);
   var result = udb.getUserWithEmailPassword(req.body.email, req.body.password);
-  if (result.user != null) {
+  if (result.user) {
+    if (result.access) {
+      var sessionKey = udb.registerUserSession(
+        result.user.uid,
+        req.body.expiration
+      );
+      res.status(200).send({ sessionKey: sessionKey, user: result.user });
+    } else {
+      res.sendStatus(401);
+    }
+  } else {
+    res.sendStatus(404);
+  }
+});
+
+app.route("/api/user/getuser").get((req, res) => {
+  var result = udb.getUserWithSessionKey(req.query.uid, req.query.sessionKey);
+  if (result.user) {
     if (result.access) {
       res.status(200).send(result.user);
     } else {
@@ -68,14 +87,15 @@ app.route("/api/source/beginconnect").post((req, res) => {
         user.connectedSources.push(req.body.sourceid);
       }
       res.sendStatus(200);
+    },
+    error => {
+      res.status(error.errors[0].code).send(error.errors);
     }
   );
   if (result != 100) {
     res.sendStatus(result);
   }
 });
-
-var fs = require("fs");
 
 app.route("/api/source/finishconnect").post((req, res) => {
   var result = sdb.finishConnect(
@@ -91,7 +111,7 @@ app.route("/api/source/finishconnect").post((req, res) => {
       res.status(200).send(user);
     },
     error => {
-      res.status(error.code).send(JSON.stringify(error.errors));
+      res.status(error.errors[0].code).send(error.errors);
     }
   );
   if (result != 100) {
@@ -105,15 +125,20 @@ app.route("/api/source/gdrive/extendscope").put((req, res) => {
   });
 });
 
-app.route("/api/source/startfilelist").post((req, res) => {
+app.route("/api/source/:sourceId/startfilelist").post((req, res) => {
   sdb.listFiles(
     req.body.uid,
+    req.params.sourceId,
     req.body.folderId,
-    ({ data }) => {
-      res.status(200).send(JSON.stringify(data.files));
+    files => {
+      res.status(200).send(files);
     },
     error => {
-      res.status(error.code).send(JSON.stringify(error.errors));
+      try {
+        res.status(error.errors[0].code).send(error.errors);
+      } catch (e) {
+        res.status(500).send(error);
+      }
     }
   );
 });
@@ -124,10 +149,10 @@ app.route("/api/source/getfilemetadata").post((req, res) => {
     req.body.fileId,
     req.body.keys,
     ({ data }) => {
-      res.status(200).send(JSON.stringify(data));
+      res.status(200).send(data);
     },
     error => {
-      res.status(error.code).send(JSON.stringify(error.errors));
+      res.status(error.errors[0].code).send(error.errors);
     }
   );
 });
@@ -138,17 +163,21 @@ app.route("/api/source/updatefilemetadata").post((req, res) => {
     req.body.fileId,
     req.body.metadata,
     ({ data }) => {
-      res.status(200).send(JSON.stringify(data));
+      res.status(200).send(data);
     },
     error => {
-      res.status(error.code).send(JSON.stringify(error.errors));
+      res.status(error.errors[0].code).send(error.errors);
     }
   );
 });
 
+app.route("/app.client.*").get((req, res) => {
+  res.sendFile(req.originalUrl.substr(1), { root: "./html" });
+});
+
 app.route("/*").get((req, res) => {
   // Just send the index.html for other files to support HTML5Mode
-  res.sendFile("index.html", { root: "./html" });
+  res.sendFile("app.client.router.html", { root: "./html" });
 });
 
 // --------------------------------------------------

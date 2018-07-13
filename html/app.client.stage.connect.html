@@ -1,0 +1,17 @@
+<div id="connectStage" class="stage center">
+  <h2>Let's Connect!</h2>
+  <h3>Select the cloud storage services you use</h3>
+  <div>
+    <button class="btn source" ng-click="onSelect('gdrive')" ng-disabled="sourceConnected.gdrive" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.gdrive]">Google Drive</button>
+    <button class="btn source" ng-click="onSelect('onedrive')" ng-disabled="sourceConnected.onedrive" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.onedrive]">Onedrive</button>
+    <button class="btn source" ng-click="onSelect('onedrive365')" ng-disabled="sourceConnected.onedrive365" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.onedrive365]">Office 365</button>
+  </div>
+  <div class="redirect background-secondary" ng-show="redirectReady">
+    <button class="btn background-primary" ng-click="onRedirect()">Click to sign into {{selected.name}}</button>
+    <div class="redirect-response" ng-show="responseReady">
+      <input type="text" name="authcode" ng-model="authcode" placeholder="Paste your code here" />
+      <button class="btn background-primary" ng-click="onResponse()">Connect!</button>
+    </div>
+  </div>
+  <button class="btn continue text-color-inverse background-accent" ng-disabled="!hasConnected" ng-click="onContinue()">Continue to dashboard</button>
+</div>

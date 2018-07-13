@@ -1,0 +1,62 @@
+<div id="dashboardStage" class="stage">
+  <div id="fileDetailsPane" class="hide background-secondary drop-shadow">
+    <div class="file-thumbnail background-secondary-light">
+      <div class="file-thumbnail-text" ng-show="user.drive.scopeLevel == 0">
+        <span class="text-muted">File thumbnails require extended permissions</span>
+        <br/>
+        <a class="file-thumbnail-text-link text-color-accent" ng-click="extendGDriveScope()">Click here to give Binder more access</a>
+      </div>
+      <div ng-show="" <div class="file-thumbnail-text" ng-show="user.drive.scopeLevel != 0 && !detailsFile.thumbnailLink">
+        <span class="text-muted">This file doesn't have a thumbnail associated.</span>
+      </div>
+      <img src="{{detailsFile.dat.thumbnailLink}}" alt="{{detailsFile.thumbnailLinkAlt}}" ng-show="detailsFile.dat.thumbnailLink"
+      />
+    </div>
+    <div class="file-info">
+      <div>
+        <div class="file-info-head">
+          <img src="{{detailsFile.dat.iconLink}}" />
+          <span class="file-info-title" ng-click="onFileClick(detailsFile)">{{detailsFile.dat.name}}</span>
+          <div class="file-info-starred" ng-click="toggleFileStarred(detailsFile)">
+            <i class="material-icons" ng-show="detailsFile.dat.starred" ng-click="toggleStarred(false)">star</i>
+            <i class="material-icons" ng-show="!detailsFile.dat.starred" ng-click="toggleStarred(true)">star_border</i>
+          </div>
+        </div>
+        <h4>{{detailsFile.dat.description}}</h4>
+        <span class="version text-muted" ng-show="detailsFile.dat.version != 0">Version: {{detailsFile.dat.version}}</span>
+      </div>
+      <div class="file-info-properties background-secondary-light">
+        Size: {{formatFileSize(detailsFile.dat.size)}}
+        <div class="modified">
+          <span class="modified-time">Modified: {{formatFileModifiedTime(detailsFile.dat.modifiedTime)}}</span>
+          <span class="modified-by text-muted"> by: {{detailsFile.dat.lastModifyingUser.displayName}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mainPane" ng-click="onMainPaneClick()">
+    <div class="label">
+      <span class="label-text">Files
+        <span ng-show="currentFolderSource=='gdrive'"> from
+          <img src="../css/img/google_drive_lockup.png">
+        </span>
+      </span>
+      <div class="label-floor"></div>
+    </div>
+    <div class="file-tray">
+      <div class="tile background-secondary drop-shadow-light" ng-repeat="file in files" ng-click="onFileClick(file)" context-menu="fileContextMenu(file)">
+        <div class="tile-top">
+          <img src="{{file.dat.iconLink}}" />
+          <i class="material-icons" ng-show="!file.dat.iconLink && file.isFolder">folder</i>
+        </div>
+        <div class="tile-content">
+          <span class="tile-text">{{file.dat.name}}</span>
+        </div>
+        <div class="tile-bottom">
+          <img src="../css/img/google_drive_icon_small_20.png" ng-show="file.source=='gdrive'">
+          <img src="../css/img/onedrive_lockup.png" ng-show="file.source=='onedrive'">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

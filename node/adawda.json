@@ -1,0 +1,396 @@
+{
+  "@odata.context":
+    "https://graph.microsoft.com/v1.0/$metadata#drive/root/children",
+  "value": [
+    {
+      "createdDateTime": "2012-09-14T19:39:03.023Z",
+      "cTag": "adDo1MzAxMTNGRUIzQzNCRjNCITExOC42MzY2NDI2NDY1MzE4MzAwMDA",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiExMTguMA",
+      "id": "530113FEB3C3BF3B!118",
+      "lastModifiedDateTime": "2018-06-10T21:57:33.183Z",
+      "name": "Documents",
+      "size": 89586721,
+      "webUrl": "https://1drv.ms/f/s!ADu_w7P-EwFTdg",
+      "createdBy": {
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "lastModifiedBy": {
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2012-09-14T19:39:03.023Z",
+        "lastModifiedDateTime": "2012-09-14T19:39:03.023Z"
+      },
+      "folder": {
+        "childCount": 11,
+        "view": {
+          "viewType": "thumbnails",
+          "sortBy": "name",
+          "sortOrder": "ascending"
+        }
+      },
+      "specialFolder": { "name": "documents" }
+    },
+    {
+      "createdDateTime": "2015-07-19T20:58:19.093Z",
+      "cTag": "adDo1MzAxMTNGRUIzQzNCRjNCITIzMjg1Mi42MzY0MzI3NzI5NjIxMzAwMDA",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiEyMzI4NTIuMQ",
+      "id": "530113FEB3C3BF3B!232852",
+      "lastModifiedDateTime": "2017-10-11T00:08:16.213Z",
+      "name": "HpLaptopBackup",
+      "size": 408014360,
+      "webUrl": "https://1drv.ms/f/s!ADu_w7P-EwFTjpsU",
+      "createdBy": {
+        "device": { "id": "183ffffb697155" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" },
+        "oneDriveSync": {
+          "@odata.type": "#microsoft.graph.identity",
+          "id": "a28bb213-a40f-4ec7-a3a7-29afa44b798e"
+        }
+      },
+      "lastModifiedBy": {
+        "device": { "id": "183ffffb697155" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" },
+        "oneDriveSync": {
+          "@odata.type": "#microsoft.graph.identity",
+          "id": "a28bb213-a40f-4ec7-a3a7-29afa44b798e"
+        }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2015-07-19T20:58:13Z",
+        "lastModifiedDateTime": "2015-07-19T20:58:13Z"
+      },
+      "folder": {
+        "childCount": 1,
+        "view": {
+          "viewType": "thumbnails",
+          "sortBy": "name",
+          "sortOrder": "ascending"
+        }
+      }
+    },
+    {
+      "createdDateTime": "2012-09-14T19:59:33.153Z",
+      "cTag": "adDo1MzAxMTNGRUIzQzNCRjNCITIwMS42MzYyMTQ4NDUyNjg3MDAwMDA",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiEyMDEuMQ",
+      "id": "530113FEB3C3BF3B!201",
+      "lastModifiedDateTime": "2017-01-31T18:35:26.87Z",
+      "name": "Music",
+      "size": 315460478,
+      "webUrl": "https://1drv.ms/f/s!ADu_w7P-EwFTgUk",
+      "createdBy": {
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "lastModifiedBy": {
+        "application": { "displayName": "OneDrive website", "id": "44048800" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2012-09-14T19:59:33.153Z",
+        "lastModifiedDateTime": "2015-04-21T16:33:42.737Z"
+      },
+      "folder": {
+        "childCount": 67,
+        "view": {
+          "viewType": "thumbnails",
+          "sortBy": "name",
+          "sortOrder": "ascending"
+        }
+      },
+      "specialFolder": { "name": "music" }
+    },
+    {
+      "createdDateTime": "2018-05-22T14:09:43.717Z",
+      "cTag": "adDo1MzAxMTNGRUIzQzNCRjNCITI3NjU4Mi42MzY2MjU5NDk5MjAwMDAwMDA",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiEyNzY1ODIuMQ",
+      "id": "530113FEB3C3BF3B!276582",
+      "lastModifiedDateTime": "2018-05-22T14:09:52Z",
+      "name": "NEVER DELETE",
+      "size": 1348,
+      "webUrl": "https://1drv.ms/f/s!ADu_w7P-EwFTkPBm",
+      "createdBy": {
+        "application": { "displayName": "MSOffice15", "id": "480728c5" },
+        "device": { "id": "18bffe690272df" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" },
+        "oneDriveSync": {
+          "@odata.type": "#microsoft.graph.identity",
+          "id": "74ead169-843b-44ce-b7ab-1b493550e976"
+        }
+      },
+      "lastModifiedBy": {
+        "application": { "displayName": "MSOffice15", "id": "480728c5" },
+        "device": { "id": "18bffe690272df" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" },
+        "oneDriveSync": {
+          "@odata.type": "#microsoft.graph.identity",
+          "id": "74ead169-843b-44ce-b7ab-1b493550e976"
+        }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2018-05-22T14:09:40Z",
+        "lastModifiedDateTime": "2018-05-22T14:09:40Z"
+      },
+      "folder": {
+        "childCount": 1,
+        "view": {
+          "viewType": "thumbnails",
+          "sortBy": "name",
+          "sortOrder": "ascending"
+        }
+      }
+    },
+    {
+      "createdDateTime": "2012-09-14T19:39:02.847Z",
+      "cTag": "adDo1MzAxMTNGRUIzQzNCRjNCITExNi42MzY2NTUxNTAxOTQwMDAwMDA",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiExMTYuMA",
+      "id": "530113FEB3C3BF3B!116",
+      "lastModifiedDateTime": "2018-06-25T09:16:59.4Z",
+      "name": "Pictures",
+      "size": 2516706167,
+      "webUrl": "https://1drv.ms/f/s!ADu_w7P-EwFTdA",
+      "createdBy": {
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "lastModifiedBy": {
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2012-09-14T19:39:02.847Z",
+        "lastModifiedDateTime": "2012-09-14T19:39:02.847Z"
+      },
+      "folder": {
+        "childCount": 33,
+        "view": {
+          "viewType": "thumbnails",
+          "sortBy": "takenOrCreatedDateTime",
+          "sortOrder": "ascending"
+        }
+      },
+      "specialFolder": { "name": "photos" }
+    },
+    {
+      "createdDateTime": "2015-07-19T20:57:27.15Z",
+      "cTag": "adDo1MzAxMTNGRUIzQzNCRjNCITIzMjg1MS42MzYzOTg0NDg1MjE1MzAwMDA",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiEyMzI4NTEuMg",
+      "id": "530113FEB3C3BF3B!232851",
+      "lastModifiedDateTime": "2017-09-01T06:40:52.153Z",
+      "name": "SecondaryRef",
+      "size": 336290728,
+      "webUrl": "https://1drv.ms/f/s!ADu_w7P-EwFTjpsT",
+      "createdBy": {
+        "device": { "id": "183ffffb697155" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" },
+        "oneDriveSync": {
+          "@odata.type": "#microsoft.graph.identity",
+          "id": "a28bb213-a40f-4ec7-a3a7-29afa44b798e"
+        }
+      },
+      "lastModifiedBy": {
+        "device": { "id": "183ffffb697155" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" },
+        "oneDriveSync": {
+          "@odata.type": "#microsoft.graph.identity",
+          "id": "a28bb213-a40f-4ec7-a3a7-29afa44b798e"
+        }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2015-07-19T20:57:17Z",
+        "lastModifiedDateTime": "2015-07-19T20:57:17Z"
+      },
+      "folder": {
+        "childCount": 7,
+        "view": {
+          "viewType": "thumbnails",
+          "sortBy": "name",
+          "sortOrder": "ascending"
+        }
+      }
+    },
+    {
+      "@microsoft.graph.downloadUrl":
+        "https://mrhfqq.dm.files.1drv.com/y4mX1i5UCiJJCmAueMp0JpJHzbDfVc2t9lqdln-wXiYIP48F0bySWT5B3OIWiDqrydKys0HnWhcNnm5cLu7VZQk7MSTrOUytQPaX5hAc_L7x92MiOnnF3GbyTXEvdeiIdpqY7Fv55R9HH4mQ3Ffc7ZQUGlctHfa7t9EOTVL4Mb7rWhJug0DH0TBt_b4bobSAdFNDYb8oqshcp9lgSbjUONB8A",
+      "createdDateTime": "2016-07-20T14:55:21.29Z",
+      "cTag": "aYzo1MzAxMTNGRUIzQzNCRjNCITI3NTAxOC43NzE",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiEyNzUwMTguMjY",
+      "id": "530113FEB3C3BF3B!275018",
+      "lastModifiedDateTime": "2016-07-27T13:01:33.81Z",
+      "name": "An Agreement.docx",
+      "size": 61419,
+      "webUrl": "https://1drv.ms/w/s!ADu_w7P-EwFTkORK",
+      "createdBy": {
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "lastModifiedBy": {
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "file": {
+        "mimeType":
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "hashes": {
+          "crc32Hash": "21B61160",
+          "sha1Hash": "2C76FDABADA012FB6DFC596481B3B67E307A50EE"
+        }
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2016-07-20T14:55:21.29Z",
+        "lastModifiedDateTime": "2016-07-27T12:40:08.58Z"
+      }
+    },
+    {
+      "@microsoft.graph.downloadUrl":
+        "https://public.by.files.1drv.com/y4m_Nm2XtmzCypXVfNPhzlIZo7T08HSVJGOsopFYgBSRPpnlLeyu09Lgx5J2T0sBFMc-DnYKOTNQ1iguqE0k-eoQnD9vxyjZGgBnGKk9HP3Xc6r_sWB7QdZgi4V2P8n7yAeJsJm3omcde7ELeYMpj5qbpiBX5JKZOOdzWOoQDtUk-x1vpnTAhoQTH8lFvwLZbK5iRs0ghPw42nlo8rDL3BmCdZr-uZGnywQ024hG9rneT-QUHFWvS6vuz7iCqdChsbY",
+      "createdDateTime": "2015-11-01T11:35:10.24Z",
+      "cTag": "aYzo1MzAxMTNGRUIzQzNCRjNCITI2NDM5Ny4yNTc",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiEyNjQzOTcuMw",
+      "id": "530113FEB3C3BF3B!264397",
+      "lastModifiedDateTime": "2015-11-01T11:35:31.16Z",
+      "name": "Extra Timetable - Live.xlsx",
+      "size": 4908,
+      "webUrl": "https://1drv.ms/x/s!ADu_w7P-EwFTkJFN",
+      "createdBy": {
+        "device": { "id": "187ffe12f5fffd" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "lastModifiedBy": {
+        "device": { "id": "187ffe12f5fffd" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "file": {
+        "mimeType":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "hashes": {
+          "crc32Hash": "891EF0E8",
+          "sha1Hash": "A3529A3344AA2FEB3FD5A6D59C2DE615D484791A"
+        }
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2015-11-01T11:35:10.24Z",
+        "lastModifiedDateTime": "2015-11-01T11:35:10.24Z"
+      }
+    },
+    {
+      "@microsoft.graph.downloadUrl":
+        "https://public.dm.files.1drv.com/y4mR-GOqo2HykOi0MMqM7Or2dBzGePTiOJ7indD7MMgOOvC1_sXVMFvItiUnKqU_DGy4-ZmoE716K50LDi9pNmTwpuCtfIgxESS7yJ12D3cr30VdLXxXpsqVPns7VYMr0yDgwNjJAcO_vtAYAYoQAKS3qgaxorLN9Nq11VlYHrY1L6pcYeMFZHrfnMzTN7dt_7U_EUsOgi2Zlpm2aN-ho0rpmO0vKdLRgxzhkf3__xV-GAMtRws05XGzpk795b7h3R-",
+      "createdDateTime": "2015-02-17T22:49:32.927Z",
+      "cTag": "aYzo1MzAxMTNGRUIzQzNCRjNCITQ2NjY5LjI1Ng",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiE0NjY2OS4z",
+      "id": "530113FEB3C3BF3B!46669",
+      "lastModifiedDateTime": "2015-02-17T23:03:31.37Z",
+      "name": "Introduction.docx",
+      "size": 101512,
+      "webUrl": "https://1drv.ms/w/s!ADu_w7P-EwFTguxN",
+      "createdBy": {
+        "device": { "id": "187ffe12f5fffd" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "lastModifiedBy": {
+        "device": { "id": "187ffe12f5fffd" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "file": {
+        "mimeType":
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "hashes": {
+          "crc32Hash": "BB47BFD2",
+          "sha1Hash": "CE6274858A09B9525E366FDC92992AC539A239B7"
+        }
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2015-02-17T22:49:32.927Z",
+        "lastModifiedDateTime": "2015-02-17T22:49:32.927Z"
+      }
+    },
+    {
+      "@microsoft.graph.downloadUrl":
+        "https://public.dm.files.1drv.com/y4mDuym_7524NE3O6F98a2LjBRpG0ZWloG9UAI-Vi9YqErK05dL-ZHNUl6dUGvH0BsgGGG-J7Ow9WUOMGPmnbNhAPy-6SSUP8XvCL3lRJMiMSdxbun_YzGaVPHJCtgGIwnERcdKoBxHQkcrukqdsUICk0Nr5Hvl5Gionf2RAm3VCYWBlOPvYyTHcZH1HcHI_K5-_ArWZjz043UwKVx5S8ufgbouWLHfN-Xy9ky9-pQtZDaDNvgElRflMCrHkXafu0D1",
+      "createdDateTime": "2015-03-16T12:21:38.8Z",
+      "cTag": "aYzo1MzAxMTNGRUIzQzNCRjNCITU0Nzg3LjI1Ng",
+      "eTag": "aNTMwMTEzRkVCM0MzQkYzQiE1NDc4Ny4z",
+      "id": "530113FEB3C3BF3B!54787",
+      "lastModifiedDateTime": "2015-03-16T12:22:38.677Z",
+      "name": "Revision timetable.xlsx",
+      "size": 5279,
+      "webUrl": "https://1drv.ms/x/s!ADu_w7P-EwFTg6wD",
+      "createdBy": {
+        "device": { "id": "187ffe12f5fffd" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "lastModifiedBy": {
+        "device": { "id": "187ffe12f5fffd" },
+        "user": { "displayName": "Victor Olaitan", "id": "530113feb3c3bf3b" }
+      },
+      "parentReference": {
+        "driveId": "530113feb3c3bf3b",
+        "driveType": "personal",
+        "id": "530113FEB3C3BF3B!115",
+        "path": "/drive/root:"
+      },
+      "file": {
+        "mimeType":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "hashes": {
+          "crc32Hash": "ED54D1D6",
+          "sha1Hash": "B7F10AB290D0B5DE57EDE2F866B0AE00F011D00B"
+        }
+      },
+      "fileSystemInfo": {
+        "createdDateTime": "2015-03-16T12:21:38.8Z",
+        "lastModifiedDateTime": "2015-03-16T12:21:38.8Z"
+      }
+    }
+  ]
+}

@@ -1,5 +1,4 @@
 const fs = require("fs");
-const readline = require("readline");
 const { google } = require("googleapis");
 
 const udb = require("../node/app.server.user");
@@ -103,7 +102,7 @@ exports.beginAuthorize = function(uid, onPrompt, onSuccess) {
     redirect_uris[0]
   );
   var userToken = getUserToken(uid);
-  if (userToken != null) {
+  if (userToken) {
     oAuth2Client.setCredentials(userToken);
     onSuccess();
   } else {
@@ -127,7 +126,7 @@ function getAccessToken(uid, oAuth2Client, onPrompt) {
 
 exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
   var authSession = getAuthSession(uid);
-  if (authSession != null) {
+  if (authSession) {
     var oAuth2Client = authSession.authclient;
     oAuth2Client.getToken(code, (err, token) => {
       if (err) {
@@ -140,7 +139,7 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
       }
     });
   } else {
-    onFail({ error: { code: 408, message: "Auth Session has expired" } });
+    onFail({ errors: [{ code: 408, message: "Auth Session has expired" }] });
   }
 };
 
@@ -210,13 +209,20 @@ exports.getFileMetadata = function(uid, fileId, keys, onSuccess, onFail) {
   );
 };
 
-exports.updateFileMetadata = function(uid, fileId, metadata, onSuccess, onFail) {
+exports.updateFileMetadata = function(
+  uid,
+  fileId,
+  metadata,
+  onSuccess,
+  onFail
+) {
   drive.files.update(
     {
       auth: getAuth(uid),
       fileId: fileId,
       metadata: metadata
-    }, (err, res) => {
+    },
+    (err, res) => {
       if (err) {
         console.log(JSON.stringify(err));
         onFail(err);

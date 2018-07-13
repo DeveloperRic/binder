@@ -1,10 +1,16 @@
 const fs = require("fs");
 
 const USERS_FILE_PATH = "server_data/app.server.user.users.json";
+const USER_SESSIONS_FILE_PATH = "server_data/app.server.user.sessions.json";
+
 var users = [];
+var userSessions = [];
+
+// DON'T FORGET TO SECURE USERS WITH NON-SEQUENTIAL IDS AND RANDOMIZED SESSION KEYS!!!
 
 exports.loadUsers = function() {
   users = JSON.parse(fs.readFileSync(USERS_FILE_PATH, "utf8"));
+  userSessions = JSON.parse(fs.readFileSync(USER_SESSIONS_FILE_PATH, "utf8"));
 };
 
 exports.newUser = function(email, password) {
@@ -62,13 +68,56 @@ exports.getUserWithUID = function(uid) {
   return user;
 };
 
+exports.getUserWithSessionKey = function(uid, sessionKey) {
+  return {
+    access: verifyUserSessionKey(uid, sessionKey),
+    user: this.getUserWithUID(uid)
+  };
+};
+
 exports.saveUsers = function() {
   fs.writeFile(USERS_FILE_PATH, JSON.stringify(users), err => {
     if (err) console.error(err);
   });
 };
 
-function newUserObject(uid, email, password, connectedSources, driveScopeLevel) {
+exports.registerUserSession = function(uid, expiration) {
+  this.endUserSession(uid);
+  var sessionKey = "abcxyz";
+  userSessions.push({ uid: uid, key: sessionKey, expires: expiration });
+  fs.writeFile(USER_SESSIONS_FILE_PATH, JSON.stringify(userSessions), err => {
+    if (err) console.error(err);
+  });
+  return sessionKey;
+};
+
+function verifyUserSessionKey(uid, sessionKey) {
+  for (let i in userSessions) {
+    let session = userSessions[i];
+    if (session.uid == uid && session.key == sessionKey) {
+      return new Date(session.expires) > new Date();
+    }
+  }
+  return false;
+}
+
+exports.endUserSession = function(uid) {
+  var newList = [];
+  userSessions.forEach(session => {
+    if (session.uid != uid) {
+      newList.push(session);
+    }
+  });
+  userSessions = newList;
+};
+
+function newUserObject(
+  uid,
+  email,
+  password,
+  connectedSources,
+  driveScopeLevel
+) {
   return {
     uid: uid,
     email: email,
