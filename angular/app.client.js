@@ -112,10 +112,20 @@ client.run(function($rootScope, $cookies, $httpParamSerializer) {
   $rootScope.validateEmail = function(email) {
     return $rootScope.emailPattern.test(String(email).toLowerCase());
   };
-  $rootScope.sources = [];
+  $rootScope.tempSourceList = [];
+  $rootScope.sources = function(onSuccess, onFail) {
+    $.get("api/source/listsources", {})
+      .done(function(data) {
+        $rootScope.tempSourceList = JSON.parse(data);
+        onSuccess($rootScope.tempSourceList);
+      })
+      .fail(function(xhr, status, error) {
+        onFail(xhr, status, error);
+      });
+  };
   $rootScope.getSource = sourceid => {
     var foundSource = null;
-    $rootScope.sources.forEach(source => {
+    $rootScope.tempSourceList.forEach(source => {
       if (source.id == sourceid) {
         foundSource = source;
       }
@@ -294,10 +304,9 @@ client.controller("connectCtrl", function(
         $rootScope.$apply();
         return;
       }
-      $.get("api/source/listsources", {})
-        .done(function(data) {
-          $rootScope.sources = JSON.parse(data);
-          $rootScope.sources.forEach(source => {
+      $rootScope.sources(
+        sources => {
+          sources.forEach(source => {
             $scope.sourceConnected[source.id] = user.connectedSources.includes(
               source.id
             );
@@ -309,10 +318,11 @@ client.controller("connectCtrl", function(
             });
           }
           $rootScope.$apply();
-        })
-        .fail(function(xhr, status, error) {
+        },
+        () => {
           $window.alert("Couldn't load sources.");
-        });
+        }
+      );
     },
     () => {
       $window.location.href = "/login";
@@ -455,53 +465,159 @@ client.controller("dashboardCtrl", function(
   $window,
   $httpParamSerializer
 ) {
+  $scope.pageStack = [];
+  $scope.sortMethod = {
+    orderBy: ["name"],
+    orderByStr: function(sourceId) {
+      var realOrderBy = [];
+      $scope.sortMethod.orderBy.forEach(method => realOrderBy.push(method));
+      if (sourceId == "gdrive") {
+        realOrderBy.splice(0, 0, "folder");
+        realOrderBy.push("modifiedByMeTime");
+      }
+      return realOrderBy.join(",");
+    }
+  };
   $scope.files = [];
   $scope.currentFolderSource = "all";
-  $scope.openFolder = function(sourceId, folderId, replace) {
-    $.post("api/source/" + sourceId + "/startfilelist", {
+  $scope.unifySourceFile = function(sourceId, fileDat) {
+    var file = {
+      isFolder: false,
+      source: sourceId,
+      dat: fileDat
+    };
+    switch (sourceId) {
+      case "gdrive":
+        file.isFolder =
+          fileDat.mimeType == "application/vnd.google-apps.folder";
+        break;
+
+      case "onedrive":
+        file.isFolder = fileDat.folder ? true : false;
+        break;
+    }
+    return file;
+  };
+  $scope.getFileParents = function(sourceId, fileId, keys) {
+    $.get("api/source/" + sourceId + "/" + fileId + "/getfilemetadata", {
       uid: $rootScope.user().uid,
-      folderId: folderId
+      keys: keys
+    }).done(parent => {
+      function func(id) {
+        $.get("api/source/" + sourceId + "/" + id + "/getfilemetadata", {
+          uid: $rootScope.user().uid,
+          keys: keys
+        }).done(parent => {
+          if (sourceId == "onedrive" && !parent.parentReference.id) {
+            parent.name = "OneDrive";
+          }
+          $scope.pageStack.splice(
+            0,
+            0,
+            $scope.unifySourceFile(sourceId, parent)
+          );
+          $scope.$apply();
+        });
+        $scope.getFileParents(sourceId, id, keys);
+      }
+
+      if (sourceId == "gdrive" && parent.parents) {
+        parent.parents.forEach(parentId => {
+          func(parentId);
+        });
+      } else if (sourceId == "onedrive" && parent.parentReference.id) {
+        func(parent.parentReference.id);
+      }
+    });
+  };
+  $scope.sortFiles = function() {
+    var files = [];
+    var tempFiles = [];
+    $scope.files.forEach(file => {
+      if (file.isFolder) {
+        files.push(file);
+      } else {
+        tempFiles.push(file);
+      }
+    });
+    tempFiles.forEach(file => files.push(file));
+    // ^^^ fix this redundancy!
+    $scope.files.length = 0;
+    files.forEach(file => $scope.files.push(file));
+  };
+  $scope.openFolder = function(sourceId, folderId, replace) {
+    if (sourceId == "all") {
+      $rootScope.sources(
+        sources => {
+          sources.forEach(source => {
+            if ($scope.user.connectedSources.includes(source.id)) {
+              $scope.openFolder(source.id, folderId, replace);
+            }
+          });
+        },
+        () => {
+          // TODO: message on sources load failure.
+        }
+      );
+      return;
+    }
+    if (folderId != "root") {
+      $scope.files.length = 0;
+      $location.search({
+        sourceId: sourceId,
+        folderId: folderId
+      });
+      $scope.currentFolderSource = sourceId;
+    } else {
+      $location.search("sourceId", null);
+      $location.search("folderId", null);
+    }
+    if (replace) {
+      $location.replace();
+    }
+    console.log($scope.sortMethod.orderByStr(sourceId));
+    $.get("api/source/" + sourceId + "/" + folderId + "/listfiles", {
+      uid: $rootScope.user().uid,
+      params: {
+        orderBy: $scope.sortMethod.orderByStr(sourceId)
+      }
     })
       .done(function(list) {
-        if (folderId != "root") {
-          $scope.files.length = 0;
-          $location.search({ sourceId: sourceId, folderId: folderId });
-          if (replace) {
-            $location.replace();
-          }
-          $scope.currentFolderSource = sourceId;
-        }
-
-        let tempFiles = [];
+        // TODO show a label when no files are returned (i.e. empty folder)
         list.forEach(file => {
-          var fileDat = {
-            isFolder: false,
-            source: file.source,
-            dat: file.dat
-          };
-          switch (file.source) {
-            case "gdrive":
-              fileDat.isFolder =
-                file.dat.mimeType == "application/vnd.google-apps.folder";
-              break;
-
-            case "onedrive":
-              fileDat.isFolder = file.dat.folder;
-              break;
-          }
-          if (fileDat.isFolder) {
-            $scope.files.push(fileDat);
-          } else {
-            tempFiles.push(fileDat);
-          }
+          $scope.files.push($scope.unifySourceFile(file.source, file.dat));
         });
-        tempFiles.forEach(file => $scope.files.push(file));
+        $scope.sortFiles();
         $scope.$apply();
       })
       .fail(function(xhr, status, error) {
         $window.alert("Couldn't load " + sourceId + " files");
         console.log(xhr.responseText);
       });
+    $scope.pageStack.length = 0;
+    if (folderId != "root") {
+      var keys = ["name"];
+      switch (sourceId) {
+        case "gdrive":
+          keys.push("parents", "mimeType");
+          break;
+
+        case "onedrive":
+          keys.push("folder", "parentReference");
+          break;
+      }
+      $.get("api/source/" + sourceId + "/" + folderId + "/getfilemetadata", {
+        uid: $rootScope.user().uid,
+        keys: keys
+      }).done(currentFolder => {
+        $scope.pageStack.splice(
+          0,
+          0,
+          $scope.unifySourceFile(sourceId, currentFolder)
+        );
+        $scope.getFileParents(sourceId, folderId, keys);
+      });
+    }
   };
 
   $rootScope.user(
@@ -531,7 +647,18 @@ client.controller("dashboardCtrl", function(
     if (file.isFolder) {
       $scope.openFolder(file.source, file.dat.id);
     } else {
-      $window.open(file.dat.webViewLink, "_self");
+      $scope.openFile(file);
+    }
+  };
+  $scope.openFile = function(file, openInNewTab) {
+    var target = openInNewTab ? "_blank" : "_self";
+    switch (file.source) {
+      case "gdrive":
+        $window.open(file.dat.webViewLink, target);
+        break;
+      case "onedrive":
+        $window.open(file.dat.webUrl, target);
+        break;
     }
   };
   $scope.fileContextMenu = function(file) {
@@ -547,14 +674,14 @@ client.controller("dashboardCtrl", function(
         text: "Explore",
         displayed: file.isFolder,
         click: function($itemScope, $event, modelValue, text, $li) {
-          $scope.openFolder(file.dat.id);
+          $scope.onFileClick(file);
         }
       },
       {
-        text: "Open file",
+        text: "Open in new tab",
         displayed: !file.isFolder,
         click: function($itemScope, $event, modelValue, text, $li) {
-          $window.open(file.dat.webViewLink, "_self");
+          $scope.openFile(file, true);
         }
       },
       {
@@ -587,36 +714,110 @@ client.controller("dashboardCtrl", function(
   $scope.detailsFile = null;
   $scope.showFileDetails = function(detailsFile) {
     $scope.detailsFile = detailsFile;
-    document.getElementById("fileDetailsPane").classList.remove("hide");
+    document.getElementById("fileDetailsPane").classList.remove("ng-hide");
 
-    $.post("api/source/getfilemetadata", {
-      uid: $rootScope.user().uid,
-      fileId: detailsFile.dat.id,
-      keys: [
-        "thumbnailLink",
-        "description",
-        "starred",
-        "version",
-        "size",
-        "modifiedTime",
-        "lastModifyingUser"
-      ]
-    })
+    console.log(detailsFile.dat);
+
+    var keys = ["description", "size"];
+    var collections = [];
+    switch (detailsFile.source) {
+      case "gdrive":
+        keys.push(
+          "thumbnailLink",
+          "starred",
+          "version",
+          "modifiedTime",
+          "lastModifyingUser"
+        );
+        break;
+      case "onedrive":
+        collections.push("thumbnails", "versions");
+        break;
+    }
+    $.get(
+      "api/source/" +
+        detailsFile.source +
+        "/" +
+        detailsFile.dat.id +
+        "/getfilemetadata",
+      {
+        uid: $rootScope.user().uid,
+        keys: keys
+      }
+    )
       .done(function(data) {
-        $scope.detailsFile.dat = $.extend($scope.detailsFile.dat, data);
+        $scope.detailsFile.dat = Object.assign($scope.detailsFile.dat, data);
+        switch (detailsFile.source) {
+          case "gdrive":
+            $scope.detailsFile = Object.assign($scope.detailsFile, {
+              thumbnailLink: data.thumbnailLink,
+              versionNumber: data.version,
+              lastModified: data.modifiedTime,
+              lastModifiedBy: data.lastModifyingUser.displayName
+            });
+            break;
+        }
         $scope.$apply();
       })
       .fail(function(xhr, status, error) {
-        $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file thumbnail.";
+        $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file metadata.";
         console.log(JSON.parse(xhr.responseText));
       });
+
+    if (detailsFile.source == "onedrive") {
+      collections.forEach(collection => {
+        $.get(
+          "api/source/" +
+            detailsFile.source +
+            "/" +
+            detailsFile.dat.id +
+            "/getfilecollection",
+          {
+            uid: $rootScope.user().uid,
+            collection: collection
+          }
+        )
+          .done(function(data) {
+            var wrapper = {};
+            wrapper[collection] = data.value;
+            $scope.detailsFile.dat = Object.assign(
+              $scope.detailsFile.dat,
+              wrapper
+            );
+            // add another switch if a different source also separates collection calls
+            console.log(data.value);
+            if (data.value) {
+              if (collection == "thumbnails") {
+                $scope.detailsFile = Object.assign($scope.detailsFile, {
+                  thumbnailLink: data.value[0].large.url
+                });
+              } else if (collection == "versions") {
+                $scope.detailsFile = Object.assign($scope.detailsFile, {
+                  versionNumber: data.value.length,
+                  lastModified: data.value[0].lastModifiedDateTime,
+                  lastModifiedBy: data.value[0].lastModifiedBy.user.displayName
+                });
+              }
+            }
+            $scope.$apply();
+          })
+          .fail(function(xhr, status, error) {
+            $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file metadata.";
+            console.log(JSON.parse(xhr.responseText));
+          });
+      });
+    }
   };
   $scope.onMainPaneClick = function() {
     $scope.detailsFile = null;
-    document.getElementById("fileDetailsPane").classList.add("hide");
+    document.getElementById("fileDetailsPane").classList.add("ng-hide");
   };
   $scope.formatFileSize = function(size) {
-    return size + " bytes";
+    if (size) {
+      return size + " bytes";
+    } else {
+      return "Unknown";
+    }
   };
   $scope.formatFileModifiedTime = function(datetime) {
     if (datetime) {

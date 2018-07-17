@@ -150,15 +150,18 @@ exports.extendScope = function(uid, onComplete) {
   onComplete(user);
 };
 
-exports.listFiles = function(uid, folderId, onSuccess, onFail) {
+exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
   drive.files.list(
-    {
-      auth: getAuth(uid),
-      orderBy: "folder,name",
-      pageSize: 10,
-      q: "'" + folderId + "' in parents",
-      fields: "nextPageToken, files(id, name, mimeType, webViewLink, iconLink)"
-    },
+    Object.assign(
+      {
+        auth: getAuth(uid),
+        pageSize: 28,
+        q: "'" + folderId + "' in parents",
+        fields:
+          "nextPageToken, files(id, name, mimeType, webViewLink, iconLink)"
+      },
+      params
+    ),
     (err, res) => {
       if (err) {
         onFail(err);

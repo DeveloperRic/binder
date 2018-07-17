@@ -4,17 +4,15 @@ const onedrive = require("./app.server.source.onedrive");
 
 const udb = require("./app.server.user");
 
-var sources = [
+exports.sources = [
   new Source("gdrive", "Google Drive"),
   new Source("onedrive", "Onedrive"),
   new Source("onedrive365", "Office 365")
 ];
 
-exports.sources = sources;
-
 exports.getSource = function(sourceid) {
   var source = null;
-  sources.forEach(asource => {
+  this.sources.forEach(asource => {
     if (asource.id == sourceid) {
       source = source;
     }
@@ -55,13 +53,14 @@ exports.finishConnect = function(sourceid, uid, code, onSuccess, onFail) {
   return 100;
 };
 
-exports.listFiles = function(uid, sourceId, folderId, onSuccess, onFail) {
+exports.listFiles = function(uid, sourceId, folderId, params, onSuccess, onFail) {
   var allFiles = [];
   switch (sourceId) {
     case "gdrive":
       gdrive.listFiles(
         uid,
         folderId,
+        params,
         ({ data }) => {
           data.files.forEach(file => {
             allFiles.push({ source: "gdrive", dat: file });
@@ -75,6 +74,8 @@ exports.listFiles = function(uid, sourceId, folderId, onSuccess, onFail) {
     case "onedrive":
       onedrive.listFiles(
         uid,
+        folderId,
+        params,
         data => {
           data.value.forEach(file => {
             allFiles.push({ source: "onedrive", dat: file });
@@ -95,12 +96,32 @@ exports.listFiles = function(uid, sourceId, folderId, onSuccess, onFail) {
   }
 };
 
-exports.extendGDriveScope = function(uid, onComplete) {
-  gdrive.extendScope(uid, onComplete);
-};
+exports.getFileMetadata = function(
+  uid,
+  sourceId,
+  fileId,
+  keys,
+  onSuccess,
+  onFail
+) {
+  switch (sourceId) {
+    case "gdrive":
+      gdrive.getFileMetadata(uid, fileId, keys, ({data}) => {
+        onSuccess(data);
+      }, onFail);
+      break;
+    case "onedrive":
+      onedrive.getFileMetadata(uid, fileId, keys, onSuccess, onFail);
+      break;
 
-exports.getFileMetadata = function(uid, fileId, keys, onSuccess, onFail) {
-  gdrive.getFileMetadata(uid, fileId, keys, onSuccess, onFail);
+    default:
+      onFail({
+        errors: [
+          { code: 400, message: "Sourceid (" + sourceId + ") is invalid" }
+        ]
+      });
+      return;
+  }
 };
 
 exports.updateFileMetadata = function(
@@ -111,4 +132,8 @@ exports.updateFileMetadata = function(
   onFail
 ) {
   gdrive.updateFileMetadata(uid, fileId, metadata, onSuccess, onFail);
+};
+
+exports.extendGDriveScope = function(uid, onComplete) {
+  gdrive.extendScope(uid, onComplete);
 };

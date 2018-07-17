@@ -5,6 +5,7 @@ const cors = require("cors");
 const url = require("url");
 const udb = require("./node/app.server.user");
 const sdb = require("./node/app.server.source");
+const onedrive = require("./node/app.server.source.onedrive");
 
 var app = express();
 
@@ -71,7 +72,7 @@ app.route("/api/user/getuser").get((req, res) => {
 });
 
 app.route("/api/source/listsources").get((req, res) => {
-  res.status(200).send(JSON.stringify(sdb.sources));
+  res.status(200).send(sdb.sources);
 });
 
 app.route("/api/source/beginconnect").post((req, res) => {
@@ -125,34 +126,32 @@ app.route("/api/source/gdrive/extendscope").put((req, res) => {
   });
 });
 
-app.route("/api/source/:sourceId/startfilelist").post((req, res) => {
+app.route("/api/source/:sourceId/:folderId/listfiles").get((req, res) => {
   sdb.listFiles(
-    req.body.uid,
+    req.query.uid,
     req.params.sourceId,
-    req.body.folderId,
+    req.params.folderId,
+    req.query.params,
     files => {
       res.status(200).send(files);
     },
     error => {
-      try {
-        res.status(error.errors[0].code).send(error.errors);
-      } catch (e) {
-        res.status(500).send(error);
-      }
+      res.status(error.code ? error.code : error.errors[0].code).send(error.errors);
     }
   );
 });
 
-app.route("/api/source/getfilemetadata").post((req, res) => {
+app.route("/api/source/:sourceId/:fileId/getfilemetadata").get((req, res) => {
   sdb.getFileMetadata(
-    req.body.uid,
-    req.body.fileId,
-    req.body.keys,
-    ({ data }) => {
-      res.status(200).send(data);
+    req.query.uid,
+    req.params.sourceId,
+    req.params.fileId,
+    req.query.keys,
+    file => {
+      res.status(200).send(file);
     },
     error => {
-      res.status(error.errors[0].code).send(error.errors);
+      res.status(error.code ? error.code : error.errors[0].code).send(error.errors);
     }
   );
 });
@@ -164,6 +163,21 @@ app.route("/api/source/updatefilemetadata").post((req, res) => {
     req.body.metadata,
     ({ data }) => {
       res.status(200).send(data);
+    },
+    error => {
+      res.status(error.errors[0].code).send(error.errors);
+    }
+  );
+});
+
+app.route("/api/source/onedrive/:fileId/getfilecollection").get((req, res) => {
+  // remember to remove onedrive from app requirements if adding other sources
+  onedrive.getFileCollection(
+    req.query.uid,
+    req.params.fileId,
+    req.query.collection,
+    file => {
+      res.status(200).send(file);
     },
     error => {
       res.status(error.errors[0].code).send(error.errors);

@@ -141,22 +141,70 @@ function refreshAccessToken(uid, onSuccess, onFail) {
   );
 }
 
-exports.listFiles = function(uid, onSuccess, onFail) {
-  var userToken = getUserToken(uid);
+exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
+  var requestUrl = "/me/drive/items/" + folderId + "/children";
+  if (folderId == "root") {
+    requestUrl = "/drive/root/children";
+  }
+  requestUrl += "?select=id,name,folder,webUrl,size&top=28";
+  if (params) {
+    requestUrl +=
+      "&" +
+      Object.keys(params)
+        .map(function(key) {
+          return key.toLowerCase() + "=" + encodeURIComponent(params[key]);
+        })
+        .join("&");
+  }
+  sendRequest(uid, requestUrl, onSuccess, onFail);
+};
 
+exports.getFileMetadata = function(uid, fileId, keys, onSuccess, onFail) {
+  var fields = "id";
+  if (keys.length > 0) {
+    keys.forEach(key => {
+      fields += "," + key;
+    });
+  }
+  sendRequest(
+    uid,
+    "/me/drive/items/" + fileId + "?select=" + fields,
+    onSuccess,
+    onFail
+  );
+};
+
+exports.getFileCollection = function(
+  uid,
+  fileId,
+  collection,
+  onSuccess,
+  onFail
+) {
+  sendRequest(
+    uid,
+    "/me/drive/items/" + fileId + "/" + collection,
+    onSuccess,
+    onFail
+  );
+};
+
+function sendRequest(uid, requestUrl, onSuccess, onFail) {
+  var userToken = getUserToken(uid);
+  // check user token is still valid
   if (new Date().getTime() >= userToken.expires) {
     refreshAccessToken(
       uid,
       () => {
-        this.listFiles(uid, onSuccess, onFail);
+        sendRequest(uid, requestUrl, onSuccess, onFail);
       },
       onFail
     );
     return;
   }
-
+  // send the request via GET protocol
   request.get(
-    MICROSOFT_GRAPH_DOMAIN + "/drive/root/children",
+    MICROSOFT_GRAPH_DOMAIN + requestUrl,
     {
       headers: {
         Authorization: "Bearer " + userToken.token.access_token,
@@ -172,7 +220,7 @@ exports.listFiles = function(uid, onSuccess, onFail) {
       }
     }
   );
-};
+}
 
 function parseErrorJSON(statusCode, data) {
   return {
