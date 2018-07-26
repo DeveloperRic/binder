@@ -4,23 +4,38 @@
       <div class="label">
         <div class="label-text">
           <div class="pages">
-            <a class="page" ng-click="openFolder('all', 'root')">Files /</a>
-            <a class="page" ng-repeat="page in pageStack" ng-click="onFileClick(page)">{{page.dat.name}} /</a>
+            <a class="page" ng-click="openFolder('all', 'root')">Files</a>
+            <a class="page" ng-repeat="page in pageStack" ng-click="onFileClick(page)"> / {{page.dat.name}}</a>
           </div>
           <div class="invisible label-floor"></div>
         </div>
         <img ng-show="currentFolderSource=='gdrive'" src="../css/img/google_drive_lockup.png">
         <img ng-show="currentFolderSource=='onedrive'" src="../css/img/onedrive_lockup.png">
       </div>
-      <div class="sorting label">
+      <div class="sorting label" ng-if="currentFolderSource && currentFolder">
         <div class="label-text inline">
-          Sort by
-          <div class="sort-criteria">
+          Order by
+          <div class="sort-criteria" ng-click="sorting.toggleDrawer($event)">
             <div class="inline">
-              <span class="criteria" ng-repeat="criteria in sortMethod.orderBy">{{criteria}}</span>
+              <span class="criteria" ng-repeat="criteria in sorting.orderBy">
+                <span ng-if="!$first">, </span>
+                {{criteria.text}}
+              </span>
+              <span class="text-color-muted" ng-if="sorting.orderBy.length == 0">&lt; no order &gt;</span>
               <span class="criteria">▼</span>
             </div>
             <div class="label-floor"></div>
+          </div>
+        </div>
+        <div class="sort-list background-secondary drop-shadow" ng-show="sorting.drawerOpen">
+          <div class="criteria" ng-repeat="criteria in sorting.availableMethods" ng-if="currentFolderSource == 'all' || criteria['all'] || criteria[currentFolderSource]"
+            ng-click="sorting.onCriteriaClick(criteria)">
+            <div class="criteria-rank background-primary" ng-if="criteria.enabled">
+              <div class="criteria-rank-item">{{sorting.orderBy.indexOf(criteria) + 1}}</div>
+              <div class="criteria-rank-item" ng-if="criteria.descending">↧</div>
+              <div class="criteria-rank-item" ng-if="!criteria.descending">↥</div>
+            </div>
+            {{criteria.text}}
           </div>
         </div>
       </div>
@@ -28,8 +43,8 @@
     <div class="file-tray">
       <div class="tile background-secondary drop-shadow-light" ng-repeat="file in files" ng-click="onFileClick(file)" context-menu="fileContextMenu(file)">
         <div class="tile-top">
-          <img src="{{file.dat.iconLink}}" />
-          <i class="material-icons" ng-show="!file.dat.iconLink && file.isFolder">folder</i>
+          <img ng-show="!file.isFolder" src="{{file.dat.iconLink}}" />
+          <i class="material-icons" ng-show="file.isFolder">folder</i>
         </div>
         <div class="tile-content">
           <span class="tile-text">{{file.dat.name}}</span>
@@ -64,6 +79,11 @@
         </div>
         <h4>{{detailsFile.dat.description}}</h4>
         <span class="version text-muted" ng-show="detailsFile.versionNumber && detailsFile.dat.version != 0">Version: {{detailsFile.versionNumber}}</span>
+      </div>
+      <div class="file-info-audio background-secondary-light" ng-if="detailsFile.dat.audio">
+        <audio id="fileInfoAudio" preload="none" controls>
+          <source data-ng-src="{{detailsFile.streamURL}}">
+        </audio>
       </div>
       <div class="file-info-properties">
         Size: {{formatFileSize(detailsFile.dat.size)}}

@@ -6,6 +6,7 @@ var client = angular.module("client", [
 
 const USER_SESSION_EXPIRATION_SECONDS = 3600;
 // REMEMBER TO ADD COOKIE WARNING!
+// focused routeparam to bring a file back into view when using browser history
 
 client.config(function($locationProvider, $routeProvider) {
   $locationProvider.html5Mode(true);
@@ -116,7 +117,7 @@ client.run(function($rootScope, $cookies, $httpParamSerializer) {
   $rootScope.sources = function(onSuccess, onFail) {
     $.get("api/source/listsources", {})
       .done(function(data) {
-        $rootScope.tempSourceList = JSON.parse(data);
+        $rootScope.tempSourceList = data;
         onSuccess($rootScope.tempSourceList);
       })
       .fail(function(xhr, status, error) {
@@ -466,16 +467,90 @@ client.controller("dashboardCtrl", function(
   $httpParamSerializer
 ) {
   $scope.pageStack = [];
-  $scope.sortMethod = {
-    orderBy: ["name"],
+  $scope.sorting = {
+    drawerOpen: false,
+    toggleDrawer: function($event) {
+      $event.stopPropagation();
+      $scope.sorting.drawerOpen = !$scope.sorting.drawerOpen;
+    },
+    availableMethods: [
+      {
+        text: "Folder",
+        gdrive: "folder",
+        enabled: true,
+        descending: false
+      },
+      {
+        text: "Name",
+        all: "name",
+        enabled: true,
+        descending: false
+      },
+      {
+        text: "Modified Time",
+        gdrive: "modifiedByMeTime",
+        onedrive: "lastModifiedDateTime",
+        enabled: false,
+        descending: false
+      },
+      {
+        text: "Size",
+        gdrive: "quotaBytesUsed",
+        onedrive: "size",
+        enabled: false,
+        descending: false
+      }
+    ],
+    orderBy: [],
     orderByStr: function(sourceId) {
       var realOrderBy = [];
-      $scope.sortMethod.orderBy.forEach(method => realOrderBy.push(method));
-      if (sourceId == "gdrive") {
-        realOrderBy.splice(0, 0, "folder");
-        realOrderBy.push("modifiedByMeTime");
-      }
+      $scope.sorting.orderBy.forEach(method => {
+        if (!(sourceId == "onedrive" && realOrderBy.length > 0)) {
+          if (method.all) {
+            realOrderBy.push(method.all);
+          } else if (method[sourceId]) {
+            realOrderBy.push(method[sourceId]);
+          }
+        }
+      });
       return realOrderBy.join(",");
+    },
+    toggleCriteria: function(criteria) {
+      criteria.enabled = !criteria.enabled;
+      if (criteria.enabled && !$scope.sorting.orderBy.includes(criteria)) {
+        $scope.sorting.orderBy.push(criteria);
+      } else if ($scope.sorting.orderBy.includes(criteria)) {
+        $scope.sorting.orderBy.splice(
+          $scope.sorting.orderBy.indexOf(criteria),
+          1
+        );
+      }
+    },
+    onCriteriaClick: function(criteria) {
+      if (criteria.enabled) {
+        if (criteria.descending) {
+          $scope.sorting.toggleCriteria(criteria);
+        }
+        criteria.descending = !criteria.descending;
+      } else {
+        $scope.sorting.toggleCriteria(criteria);
+      }
+      $scope.openFolder($scope.currentFolderSource, $scope.currentFolder, true);
+    },
+    sortFiles: function() {
+      var files = [];
+      var tempFiles = [];
+      $scope.files.forEach(file => {
+        if (file.isFolder) {
+          files.push(file);
+        } else {
+          tempFiles.push(file);
+        }
+      });
+      tempFiles.forEach(file => files.push(file));
+      // ^^^ fix this redundancy!
+      $scope.files.length = 0;
+      files.forEach(file => $scope.files.push(file));
     }
   };
   $scope.files = [];
@@ -530,30 +605,17 @@ client.controller("dashboardCtrl", function(
       }
     });
   };
-  $scope.sortFiles = function() {
-    var files = [];
-    var tempFiles = [];
-    $scope.files.forEach(file => {
-      if (file.isFolder) {
-        files.push(file);
-      } else {
-        tempFiles.push(file);
-      }
-    });
-    tempFiles.forEach(file => files.push(file));
-    // ^^^ fix this redundancy!
-    $scope.files.length = 0;
-    files.forEach(file => $scope.files.push(file));
-  };
   $scope.openFolder = function(sourceId, folderId, replace) {
     if (sourceId == "all") {
       $rootScope.sources(
         sources => {
+          $scope.files.length = 0;
           sources.forEach(source => {
             if ($scope.user.connectedSources.includes(source.id)) {
               $scope.openFolder(source.id, folderId, replace);
             }
           });
+          $scope.currentFolderSource = "all";
         },
         () => {
           // TODO: message on sources load failure.
@@ -561,13 +623,14 @@ client.controller("dashboardCtrl", function(
       );
       return;
     }
+    $scope.currentFolder = folderId;
+    $scope.currentFolderSource = sourceId;
     if (folderId != "root") {
       $scope.files.length = 0;
       $location.search({
         sourceId: sourceId,
         folderId: folderId
       });
-      $scope.currentFolderSource = sourceId;
     } else {
       $location.search("sourceId", null);
       $location.search("folderId", null);
@@ -575,11 +638,10 @@ client.controller("dashboardCtrl", function(
     if (replace) {
       $location.replace();
     }
-    console.log($scope.sortMethod.orderByStr(sourceId));
     $.get("api/source/" + sourceId + "/" + folderId + "/listfiles", {
       uid: $rootScope.user().uid,
       params: {
-        orderBy: $scope.sortMethod.orderByStr(sourceId)
+        orderBy: $scope.sorting.orderByStr(sourceId)
       }
     })
       .done(function(list) {
@@ -587,7 +649,7 @@ client.controller("dashboardCtrl", function(
         list.forEach(file => {
           $scope.files.push($scope.unifySourceFile(file.source, file.dat));
         });
-        $scope.sortFiles();
+        $scope.sorting.sortFiles();
         $scope.$apply();
       })
       .fail(function(xhr, status, error) {
@@ -610,6 +672,9 @@ client.controller("dashboardCtrl", function(
         uid: $rootScope.user().uid,
         keys: keys
       }).done(currentFolder => {
+        if (sourceId == "onedrive" && folderId == "root") {
+          currentFolder.name = "OneDrive";
+        }
         $scope.pageStack.splice(
           0,
           0,
@@ -628,11 +693,15 @@ client.controller("dashboardCtrl", function(
         $scope.$apply();
       }
       $scope.user = user;
+      $scope.sorting.availableMethods.forEach(method => {
+        if (method.enabled) {
+          $scope.sorting.orderBy.push(method);
+        }
+      });
       if ($routeParams.folderId) {
         $scope.openFolder($routeParams.sourceId, $routeParams.folderId, true);
       } else {
-        $scope.openFolder("gdrive", "root");
-        $scope.openFolder("onedrive", "root");
+        $scope.openFolder("all", "root");
       }
     },
     () => {
@@ -716,8 +785,6 @@ client.controller("dashboardCtrl", function(
     $scope.detailsFile = detailsFile;
     document.getElementById("fileDetailsPane").classList.remove("ng-hide");
 
-    console.log(detailsFile.dat);
-
     var keys = ["description", "size"];
     var collections = [];
     switch (detailsFile.source) {
@@ -727,10 +794,12 @@ client.controller("dashboardCtrl", function(
           "starred",
           "version",
           "modifiedTime",
-          "lastModifyingUser"
+          "lastModifyingUser",
+          "webContentLink"
         );
         break;
       case "onedrive":
+        keys.push("malware", "audio", "@microsoft.graph.downloadUrl");
         collections.push("thumbnails", "versions");
         break;
     }
@@ -747,15 +816,26 @@ client.controller("dashboardCtrl", function(
     )
       .done(function(data) {
         $scope.detailsFile.dat = Object.assign($scope.detailsFile.dat, data);
+        console.log($scope.detailsFile);
         switch (detailsFile.source) {
           case "gdrive":
             $scope.detailsFile = Object.assign($scope.detailsFile, {
               thumbnailLink: data.thumbnailLink,
               versionNumber: data.version,
               lastModified: data.modifiedTime,
-              lastModifiedBy: data.lastModifyingUser.displayName
+              lastModifiedBy: data.lastModifyingUser.displayName,
+              streamURL: data.webContentLink
+            });
+            $scope.detailsFile.dat = Object.assign($scope.detailsFile.dat, {
+              audio: $scope.detailsFile.dat.mimeType.startsWith("audio")
             });
             break;
+          case "onedrive":
+            if (!data.malware) {
+              $scope.detailsFile = Object.assign($scope.detailsFile, {
+                streamURL: data["@microsoft.graph.downloadUrl"]
+              });
+            }
         }
         $scope.$apply();
       })
@@ -785,19 +865,22 @@ client.controller("dashboardCtrl", function(
               wrapper
             );
             // add another switch if a different source also separates collection calls
-            console.log(data.value);
             if (data.value) {
-              if (collection == "thumbnails") {
-                $scope.detailsFile = Object.assign($scope.detailsFile, {
-                  thumbnailLink: data.value[0].large.url
-                });
-              } else if (collection == "versions") {
-                $scope.detailsFile = Object.assign($scope.detailsFile, {
-                  versionNumber: data.value.length,
-                  lastModified: data.value[0].lastModifiedDateTime,
-                  lastModifiedBy: data.value[0].lastModifiedBy.user.displayName
-                });
-              }
+              try {
+                if (collection == "thumbnails") {
+                  $scope.detailsFile = Object.assign($scope.detailsFile, {
+                    thumbnailLink: data.value[0].large.url
+                  });
+                } else if (collection == "versions") {
+                  $scope.detailsFile = Object.assign($scope.detailsFile, {
+                    versionNumber: data.value.length,
+                    lastModified: data.value[0].lastModifiedDateTime,
+                    lastModifiedBy:
+                      data.value[0].lastModifiedBy.user.displayName
+                  });
+                }
+                x;
+              } catch (error) {}
             }
             $scope.$apply();
           })
@@ -811,10 +894,19 @@ client.controller("dashboardCtrl", function(
   $scope.onMainPaneClick = function() {
     $scope.detailsFile = null;
     document.getElementById("fileDetailsPane").classList.add("ng-hide");
+    $scope.sorting.drawerOpen = false;
   };
   $scope.formatFileSize = function(size) {
     if (size) {
-      return size + " bytes";
+      if (size >= Math.pow(1024, 3)) {
+        return Math.floor(size / Math.pow(1024, 3)) + " GB";
+      } else if (size >= Math.pow(1024, 2)) {
+        return Math.floor(size / Math.pow(1024, 2)) + " MB";
+      } else if (size >= 1024) {
+        return Math.floor(size / 1024) + " KB";
+      } else {
+        return size + " bytes";
+      }
     } else {
       return "Unknown";
     }

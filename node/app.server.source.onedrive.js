@@ -189,6 +189,10 @@ exports.getFileCollection = function(
   );
 };
 
+exports.getFileContent = function(uid, fileId, onSuccess, onFail) {
+  sendRequest(uid, "/me/drive/items/" + fileId + "/content", onSuccess, onFail);
+};
+
 function sendRequest(uid, requestUrl, onSuccess, onFail) {
   var userToken = getUserToken(uid);
   // check user token is still valid
@@ -212,11 +216,22 @@ function sendRequest(uid, requestUrl, onSuccess, onFail) {
       }
     },
     (error, response, body) => {
-      var data = JSON.parse(body);
-      if (!error && response.statusCode == 200) {
-        onSuccess(data);
-      } else {
-        onFail(parseErrorJSON(response.statusCode, data));
+      var data = body;
+      try {
+        try {
+          data = JSON.parse(body);
+        } catch (err1) {}
+        if (!error && response.statusCode == 200) {
+          onSuccess(data);
+        } else {
+          onFail(parseErrorJSON(response.statusCode, data));
+        }
+      } catch (err) {
+        onFail({
+          errors: [
+            { code: 500, message: JSON.stringify(err) }
+          ]
+        });
       }
     }
   );

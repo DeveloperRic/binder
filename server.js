@@ -185,6 +185,19 @@ app.route("/api/source/onedrive/:fileId/getfilecollection").get((req, res) => {
   );
 });
 
+app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
+  onedrive.getFileContent(
+    req.query.uid,
+    req.params.fileId,
+    file => {
+      res.status(200).send(file);
+    },
+    error => {
+      res.status(error.code ? error.code : error.errors[0].code).send(error.errors);
+    }
+  );
+});
+
 app.route("/app.client.*").get((req, res) => {
   res.sendFile(req.originalUrl.substr(1), { root: "./html" });
 });
