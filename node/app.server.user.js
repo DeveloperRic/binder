@@ -10,8 +10,20 @@ var userSessions = [];
 // DON'T FORGET TO SECURE USERS WITH NON-SEQUENTIAL IDS AND RANDOMIZED SESSION KEYS!!!
 
 exports.loadUsers = function() {
-  users = JSON.parse(fs.readFileSync(USERS_FILE_PATH, "utf8"));
-  userSessions = JSON.parse(fs.readFileSync(USER_SESSIONS_FILE_PATH, "utf8"));
+  fs.readFile(
+    USERS_FILE_PATH,
+    (err, content) => {
+      if (err) return console.log("Error loading users: ", err);
+      users = JSON.parse(content);
+    }
+  );
+  fs.readFile(
+    USER_SESSIONS_FILE_PATH,
+    (err, content) => {
+      if (err) return console.log("Error loading user sessions: ", err);
+      userSessions = JSON.parse(content);
+    }
+  );
 };
 
 exports.newUser = function(email, password) {
