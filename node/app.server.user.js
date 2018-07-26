@@ -1,4 +1,5 @@
 const fs = require("fs");
+const uuidv4 = require("uuid/v4");
 
 const USERS_FILE_PATH = "server_data/app.server.user.users.json";
 const USER_SESSIONS_FILE_PATH = "server_data/app.server.user.sessions.json";
@@ -19,7 +20,7 @@ exports.newUser = function(email, password) {
     user: null
   };
   if (this.getUserWithEmailPassword(email, password).user == null) {
-    var user = newUserObject(users.length, email, password, [], 0);
+    var user = newUserObject(uuidv4(), email, password, [], 0);
     users.push(user);
     this.saveUsers();
     result = {
@@ -83,7 +84,7 @@ exports.saveUsers = function() {
 
 exports.registerUserSession = function(uid, expiration) {
   this.endUserSession(uid);
-  var sessionKey = "abcxyz";
+  var sessionKey = uuidv4();
   userSessions.push({ uid: uid, key: sessionKey, expires: expiration });
   fs.writeFile(USER_SESSIONS_FILE_PATH, JSON.stringify(userSessions), err => {
     if (err) console.error(err);

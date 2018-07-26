@@ -36,7 +36,7 @@ client.config(function($locationProvider, $routeProvider) {
     });
 });
 
-client.run(function($rootScope, $cookies, $httpParamSerializer) {
+client.run(function($rootScope, $cookies, $location, $httpParamSerializer) {
   $rootScope.navButtons = [
     {
       url: "connect/onedrive",
@@ -89,8 +89,7 @@ client.run(function($rootScope, $cookies, $httpParamSerializer) {
     } else {
       var cookie = $rootScope.userSession();
       if (cookie) {
-        $.get("api/user/getuser", {
-          uid: cookie.uid,
+        $.get("api/user/" + cookie.uid, {
           sessionKey: cookie.key
         })
           .done(function(userdata) {
@@ -134,11 +133,11 @@ client.run(function($rootScope, $cookies, $httpParamSerializer) {
     return foundSource;
   };
   $rootScope.extendGDriveScope = function() {
-    $.put("api/source/gdrive/extendscope", {
-      uid: $rootScope.user.uid
+    $.post("api/source/gdrive/extendscope", {
+      uid: $rootScope.user().uid
     })
       .done(function(userdata) {
-        $rootScope.user = userdata;
+        $rootScope.loggedInUser = userdata;
         $location.url(
           "/connect?" +
             $httpParamSerializer({
@@ -196,9 +195,9 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
   );
 
   $scope.userFound = false;
-  $scope.email = "a@a.bv";
-  $scope.password = "abc";
-  $scope.passwordconfirm = "abc";
+  $scope.email = "";
+  $scope.password = "";
+  $scope.passwordconfirm = "";
   $scope.error = {
     exists: false,
     message: ""
@@ -217,12 +216,15 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
       $scope.postError("Your passwords don't match.");
       return;
     }
+    var expiration = $rootScope.userSessionExpiration();
     $.post("api/user/newuser", {
       email: $scope.email,
-      password: $scope.password
+      password: $scope.password,
+      expiration: expiration
     })
-      .done(function(userdata) {
-        $rootScope.user = userdata;
+      .done(function(data) {
+        $rootScope.loggedInUser = data.user;
+        $rootScope.userSession(data.user.uid, data.sessionKey, expiration);
         $window.location.href = "/connect";
         $scope.$apply();
       })
@@ -250,8 +252,8 @@ client.controller("loginCtrl", function(
 
   $scope.canReturn = false;
 
-  $scope.email = "a@d.min";
-  $scope.password = "admin";
+  $scope.email = "";
+  $scope.password = "";
   $scope.error = {
     exists: false,
     message: ""
@@ -374,7 +376,7 @@ client.controller("connectCtrl", function(
       })
       .then(
         response => {
-          $rootScope.user = response.data;
+          $rootScope.loggedInUser = response.data;
           $scope.onConnect($scope.selected.id);
         },
         error => {
@@ -816,7 +818,6 @@ client.controller("dashboardCtrl", function(
     )
       .done(function(data) {
         $scope.detailsFile.dat = Object.assign($scope.detailsFile.dat, data);
-        console.log($scope.detailsFile);
         switch (detailsFile.source) {
           case "gdrive":
             $scope.detailsFile = Object.assign($scope.detailsFile, {

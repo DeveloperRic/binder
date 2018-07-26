@@ -58,7 +58,7 @@
   </div>
   <div id="fileDetailsPane" class="ng-hide background-secondary">
     <div class="file-thumbnail background-secondary-light">
-      <div class="file-thumbnail-text" ng-show="user.drive.scopeLevel == 0">
+      <div class="file-thumbnail-text" ng-show="detailsFile.source == 'gdrive' && user.drive.scopeLevel == 0">
         <span class="text-muted">File thumbnails require extended permissions</span>
         <br/>
         <a class="file-thumbnail-text-link text-color-accent" ng-click="extendGDriveScope()">Click here to give Binder more access</a>

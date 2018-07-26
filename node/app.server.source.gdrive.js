@@ -143,11 +143,15 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
   }
 };
 
-exports.extendScope = function(uid, onComplete) {
+exports.extendScope = function(uid, onSuccess, onFail) {
   var user = udb.getUserWithUID(uid);
-  user.drive.scopeLevel = 1;
-  setUserToken(uid, null);
-  onComplete(user);
+  if (user.connectedSources.includes("gdrive")) {
+    user.drive.scopeLevel = 1;
+    setUserToken(uid, null);
+    onSuccess(user);
+  } else {
+    onFail();
+  }
 };
 
 exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {

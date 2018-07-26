@@ -34,7 +34,11 @@ app.use(
 app.route("/api/user/newuser").post((req, res) => {
   var result = udb.newUser(req.body.email, req.body.password);
   if (result.access) {
-    res.status(201).send(result.user.toJSON());
+    var sessionKey = udb.registerUserSession(
+      result.user.uid,
+      req.body.expiration
+    );
+    res.status(201).send({ sessionKey: sessionKey, user: result.user });
   } else {
     res.sendStatus(403);
   }
@@ -58,8 +62,8 @@ app.route("/api/user/loginuser").post((req, res) => {
   }
 });
 
-app.route("/api/user/getuser").get((req, res) => {
-  var result = udb.getUserWithSessionKey(req.query.uid, req.query.sessionKey);
+app.route("/api/user/:uid").get((req, res) => {
+  var result = udb.getUserWithSessionKey(req.params.uid, req.query.sessionKey);
   if (result.user) {
     if (result.access) {
       res.status(200).send(result.user);
@@ -120,10 +124,22 @@ app.route("/api/source/finishconnect").post((req, res) => {
   }
 });
 
-app.route("/api/source/gdrive/extendscope").put((req, res) => {
-  sdb.extendGDriveScope(req.body.uid, user => {
-    res.status(200).send(user);
-  });
+app.route("/api/source/gdrive/extendscope").post((req, res) => {
+  sdb.extendGDriveScope(
+    req.body.uid,
+    user => {
+      user.connectedSources.splice(user.connectedSources.indexOf("gdrive"), 1);
+      res.status(200).send(user);
+    },
+    () => {
+      res
+        .status(409)
+        .send(
+          "The user hasn't connected to Google Drive." +
+            " Connect to it first before attempting to extend it's scope."
+        );
+    }
+  );
 });
 
 app.route("/api/source/:sourceId/:folderId/listfiles").get((req, res) => {
@@ -136,7 +152,9 @@ app.route("/api/source/:sourceId/:folderId/listfiles").get((req, res) => {
       res.status(200).send(files);
     },
     error => {
-      res.status(error.code ? error.code : error.errors[0].code).send(error.errors);
+      res
+        .status(error.code ? error.code : error.errors[0].code)
+        .send(error.errors);
     }
   );
 });
@@ -151,7 +169,9 @@ app.route("/api/source/:sourceId/:fileId/getfilemetadata").get((req, res) => {
       res.status(200).send(file);
     },
     error => {
-      res.status(error.code ? error.code : error.errors[0].code).send(error.errors);
+      res
+        .status(error.code ? error.code : error.errors[0].code)
+        .send(error.errors);
     }
   );
 });
@@ -193,7 +213,9 @@ app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
       res.status(200).send(file);
     },
     error => {
-      res.status(error.code ? error.code : error.errors[0].code).send(error.errors);
+      res
+        .status(error.code ? error.code : error.errors[0].code)
+        .send(error.errors);
     }
   );
 });
