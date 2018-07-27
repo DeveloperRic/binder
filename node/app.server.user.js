@@ -10,20 +10,26 @@ var userSessions = [];
 // DON'T FORGET TO SECURE USERS WITH NON-SEQUENTIAL IDS AND RANDOMIZED SESSION KEYS!!!
 
 exports.loadUsers = function() {
-  fs.readFile(
-    USERS_FILE_PATH,
-    (err, content) => {
-      if (err) return console.log("Error loading users: ", err);
-      users = JSON.parse(content);
+  fs.readFile(USERS_FILE_PATH, (err, content) => {
+    if (err) {
+      if (err.code == "ENOENT") {
+        this.saveUsers();
+      } else {
+        return console.log("Error loading users: ", err);
+      }
     }
-  );
-  fs.readFile(
-    USER_SESSIONS_FILE_PATH,
-    (err, content) => {
-      if (err) return console.log("Error loading user sessions: ", err);
-      userSessions = JSON.parse(content);
+    users = JSON.parse(content);
+  });
+  fs.readFile(USER_SESSIONS_FILE_PATH, (err, content) => {
+    if (err) {
+      if (err.code == "ENOENT") {
+        saveUserSessions();
+      } else {
+        return console.log("Error loading user sessions: ", err);
+      }
     }
-  );
+    userSessions = JSON.parse(content);
+  });
 };
 
 exports.newUser = function(email, password) {
@@ -98,9 +104,7 @@ exports.registerUserSession = function(uid, expiration) {
   this.endUserSession(uid);
   var sessionKey = uuidv4();
   userSessions.push({ uid: uid, key: sessionKey, expires: expiration });
-  fs.writeFile(USER_SESSIONS_FILE_PATH, JSON.stringify(userSessions), err => {
-    if (err) console.error(err);
-  });
+  saveUserSessions();
   return sessionKey;
 };
 
@@ -123,6 +127,12 @@ exports.endUserSession = function(uid) {
   });
   userSessions = newList;
 };
+
+function saveUserSessions() {
+  fs.writeFile(USER_SESSIONS_FILE_PATH, JSON.stringify(userSessions), err => {
+    if (err) console.error(err);
+  });
+}
 
 function newUserObject(
   uid,

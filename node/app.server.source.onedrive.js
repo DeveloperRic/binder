@@ -17,7 +17,13 @@ exports.init = function() {
   fs.readFile(
     "server_data/app.server.source.onedrive.app_secret.json",
     (err, content) => {
-      if (err) return console.log("Error loading client secret file: ", err);
+      if (err) {
+        if (err.code == "ENOENT") {
+          return console.log("Couldn't find onedrive client secret!");
+        } else {
+          return console.log("Error loading client secret file: ", err);
+        }
+      }
       app_secret = JSON.parse(content);
     }
   );
@@ -26,6 +32,8 @@ exports.init = function() {
   fs.readFile(TOKEN_PATH, (err, content) => {
     if (!err) {
       userTokens = JSON.parse(content);
+    } else if (err.code == 'ENOENT') {
+      saveUserTokens();
     }
   });
 };
@@ -228,9 +236,7 @@ function sendRequest(uid, requestUrl, onSuccess, onFail) {
         }
       } catch (err) {
         onFail({
-          errors: [
-            { code: 500, message: JSON.stringify(err) }
-          ]
+          errors: [{ code: 500, message: JSON.stringify(err) }]
         });
       }
     }

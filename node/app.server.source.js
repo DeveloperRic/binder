@@ -31,6 +31,8 @@ exports.beginConnect = function(sourceid, uid, onPrompt, onSuccess, onFail) {
     case "onedrive":
       onedrive.beginAuthorize(uid, onPrompt, onSuccess, onFail);
       break;
+    case "onedrive365":
+      return 501;
 
     default:
       return 400;
@@ -53,7 +55,14 @@ exports.finishConnect = function(sourceid, uid, code, onSuccess, onFail) {
   return 100;
 };
 
-exports.listFiles = function(uid, sourceId, folderId, params, onSuccess, onFail) {
+exports.listFiles = function(
+  uid,
+  sourceId,
+  folderId,
+  params,
+  onSuccess,
+  onFail
+) {
   var allFiles = [];
   switch (sourceId) {
     case "gdrive":
@@ -106,9 +115,15 @@ exports.getFileMetadata = function(
 ) {
   switch (sourceId) {
     case "gdrive":
-      gdrive.getFileMetadata(uid, fileId, keys, ({data}) => {
-        onSuccess(data);
-      }, onFail);
+      gdrive.getFileMetadata(
+        uid,
+        fileId,
+        keys,
+        ({ data }) => {
+          onSuccess(data);
+        },
+        onFail
+      );
       break;
     case "onedrive":
       onedrive.getFileMetadata(uid, fileId, keys, onSuccess, onFail);

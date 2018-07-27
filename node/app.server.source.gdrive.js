@@ -24,7 +24,13 @@ exports.init = function() {
   fs.readFile(
     "server_data/app.server.source.gdrive.client_secret.json",
     (err, content) => {
-      if (err) return console.log("Error loading client secret file: ", err);
+      if (err) {
+        if (err.code == "ENOENT") {
+          return console.log("Couldn't find gdrive client secret!");
+        } else {
+          return console.log("Error loading client secret file: ", err);
+        }
+      }
       const credentials = JSON.parse(content);
       client_secret = credentials.installed.client_secret;
       client_id = credentials.installed.client_id;
@@ -36,6 +42,8 @@ exports.init = function() {
   fs.readFile(TOKEN_PATH, (err, content) => {
     if (!err) {
       userTokens = JSON.parse(content);
+    } else if (err.code == 'ENOENT') {
+      saveUserTokens()
     }
   });
 };
