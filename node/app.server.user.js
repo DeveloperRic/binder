@@ -13,7 +13,7 @@ exports.loadUsers = function() {
   fs.readFile(USERS_FILE_PATH, (err, content) => {
     if (err) {
       if (err.code == "ENOENT") {
-        this.saveUsers();
+        return this.saveUsers();
       } else {
         return console.log("Error loading users: ", err);
       }
@@ -23,7 +23,7 @@ exports.loadUsers = function() {
   fs.readFile(USER_SESSIONS_FILE_PATH, (err, content) => {
     if (err) {
       if (err.code == "ENOENT") {
-        saveUserSessions();
+        return saveUserSessions();
       } else {
         return console.log("Error loading user sessions: ", err);
       }

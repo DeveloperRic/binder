@@ -43,7 +43,7 @@ exports.init = function() {
     if (!err) {
       userTokens = JSON.parse(content);
     } else if (err.code == 'ENOENT') {
-      saveUserTokens()
+      saveUserTokens();
     }
   });
 };
