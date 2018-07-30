@@ -103,14 +103,14 @@ function getAuth(uid) {
   return oAuth2Client;
 }
 
-exports.beginAuthorize = function(uid, onPrompt, onSuccess) {
+exports.beginAuthorize = function(uid, forceUpdate, onPrompt, onSuccess) {
   var oAuth2Client = new google.auth.OAuth2(
     client_id,
     client_secret,
     redirect_uris[0]
   );
   var userToken = getUserToken(uid);
-  if (userToken) {
+  if (userToken && !forceUpdate) {
     oAuth2Client.setCredentials(userToken);
     onSuccess();
   } else {

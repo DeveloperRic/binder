@@ -316,9 +316,15 @@ client.controller("connectCtrl", function(
           });
           $scope.hasConnected = user.connectedSources.length > 0;
           if ($routeParams.updateSources) {
-            $routeParams.updateSources.forEach(source => {
-              $scope.sourceConnected[source] = false;
-            });
+            if (typeof $routeParams.updateSources == Array) {
+              $routeParams.updateSources.forEach(source => {
+                $scope.sourceConnected[source] = false;
+                $scope.forceUpdate.push(source);
+              });
+            } else {
+              $scope.sourceConnected[$routeParams.updateSources] = false;
+              $scope.forceUpdate.push($routeParams.updateSources);
+            }
           }
           $rootScope.$apply();
         },
@@ -335,12 +341,12 @@ client.controller("connectCtrl", function(
   $scope.redirectReady = false;
   $scope.redirectURL = "";
   $scope.selected = null;
-  $scope.onSelect = function(sourceid) {
-    $scope.selected = $rootScope.getSource(sourceid);
+  $scope.onSelect = function(sourceId) {
+    $scope.selected = $rootScope.getSource(sourceId);
     $http
-      .post("api/source/beginconnect", {
-        sourceid: sourceid,
-        uid: $rootScope.user().uid
+      .post("api/source/" + sourceId + "/beginconnect", {
+        uid: $rootScope.user().uid,
+        forceUpdate: $scope.forceUpdate.includes(sourceId)
       })
       .then(
         response => {
@@ -368,21 +374,18 @@ client.controller("connectCtrl", function(
   $scope.responseReady = false;
   $scope.authcode = "";
   $scope.onResponse = () => {
-    $http
-      .post("api/source/finishconnect", {
-        sourceid: $scope.selected.id,
-        uid: $rootScope.user().uid,
-        code: $scope.authcode
+    $.post("api/source/" + $scope.selected.id + "/finishconnect", {
+      uid: $rootScope.user().uid,
+      code: $scope.authcode
+    })
+      .done(data => {
+        $rootScope.loggedInUser = data;
+        $scope.onConnect($scope.selected.id);
       })
-      .then(
-        response => {
-          $rootScope.loggedInUser = response.data;
-          $scope.onConnect($scope.selected.id);
-        },
-        error => {
-          $window.alert("(" + error.status + ") -> " + error.data);
-        }
-      );
+      .fail((xhr, status, error) => {
+        $window.alert("(" + error.status + ") -> " + error.data);
+        console.log(xhr.responseText);
+      });
   };
   $scope.hasConnected = false;
   $scope.onConnect = function(sourceid) {
@@ -393,6 +396,7 @@ client.controller("connectCtrl", function(
     $scope.hasConnected = true;
   };
   $rootScope.notifyExternalConnectCompleted = $scope.onConnect;
+  $scope.forceUpdate = [];
   $scope.sourceConnected = {
     gdrive: false,
     onedrive: false,
@@ -418,24 +422,22 @@ client.controller("connectOnedriveCtrl", function(
   $rootScope.user(
     user => {
       if ($routeParams.code) {
-        $http
-          .post("api/source/finishconnect", {
-            sourceid: "onedrive",
-            uid: user.uid,
-            code: $routeParams.code
+        $.post("api/source/onedrive/finishconnect", {
+          uid: user.uid,
+          code: $routeParams.code
+        })
+          .done(data => {
+            $rootScope.loggedInUser = data;
+            $scope.resultPending = false;
+            $scope.isConnected = true;
+            $rootScope.notifyExternalConnectCompleted("onedrive");
+            $scope.$apply();
           })
-          .then(
-            response => {
-              $rootScope.loggedInUser = response.data;
-              $scope.resultPending = false;
-              $scope.isConnected = true;
-              $rootScope.notifyExternalConnectCompleted("onedrive");
-            },
-            error => {
-              $scope.resultPending = false;
-              $window.alert("(" + error.status + ") -> " + error.data);
-            }
-          );
+          .fail((xhr, status, error) => {
+            $scope.resultPending = false;
+            console.log(xhr.responseText);
+            $scope.$apply();
+          });
       } else {
         $scope.resultPending = false;
       }

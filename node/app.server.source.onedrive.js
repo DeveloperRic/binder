@@ -76,9 +76,9 @@ function saveUserTokens() {
   });
 }
 
-exports.beginAuthorize = function(uid, onPrompt, onSuccess, onFail) {
+exports.beginAuthorize = function(uid, forceUpdate, onPrompt, onSuccess, onFail) {
   var userToken = getUserToken(uid);
-  if (userToken) {
+  if (userToken && !forceUpdate) {
     if (new Date().getTime() < userToken.expires) {
       onSuccess();
     } else {
@@ -90,11 +90,9 @@ exports.beginAuthorize = function(uid, onPrompt, onSuccess, onFail) {
       "?client_id=" +
       app_secret.client_id +
       "&response_type=code" +
-      "&redirect_uri=" +
-      encodeURIComponent("http://localhost:8080/connect/onedrive") +
       "&scope=" +
       encodeURIComponent(
-        "offline_access user.read files.read files.read.all sites.read.all"
+        "offline_access user.read files.read.all"
       );
     onPrompt(url);
   }

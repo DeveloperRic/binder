@@ -6,8 +6,8 @@ const udb = require("./app.server.user");
 
 exports.sources = [
   new Source("gdrive", "Google Drive"),
-  new Source("onedrive", "Onedrive"),
-  new Source("onedrive365", "Office 365")
+  new Source("onedrive", "Onedrive / Office 365")
+  //new Source("onedrive365", "Office 365")
 ];
 
 exports.getSource = function(sourceid) {
@@ -23,13 +23,13 @@ exports.getSource = function(sourceid) {
 gdrive.init();
 onedrive.init();
 
-exports.beginConnect = function(sourceid, uid, onPrompt, onSuccess, onFail) {
+exports.beginConnect = function(sourceid, uid, forceUpdate, onPrompt, onSuccess, onFail) {
   switch (sourceid) {
     case "gdrive":
-      gdrive.beginAuthorize(uid, onPrompt, onSuccess);
+      gdrive.beginAuthorize(uid, forceUpdate, onPrompt, onSuccess);
       break;
     case "onedrive":
-      onedrive.beginAuthorize(uid, onPrompt, onSuccess, onFail);
+      onedrive.beginAuthorize(uid, forceUpdate, onPrompt, onSuccess, onFail);
       break;
     case "onedrive365":
       return 501;

@@ -72,7 +72,7 @@
       <div>
         <div class="file-info-head">
           <span class="file-info-title" ng-click="openFile(detailsFile, true)">{{detailsFile.dat.name}}</span>
-          <div class="file-info-starred" ng-click="toggleFileStarred(detailsFile)" ng-show="detailsFile.source=='gdrive'">
+          <div class="file-info-starred" ng-click="toggleFileStarred(detailsFile)" ng-if="detailsFile.source=='gdrive'">
             <i class="material-icons" ng-show="detailsFile.dat.starred" ng-click="toggleStarred(false)">star</i>
             <i class="material-icons" ng-show="!detailsFile.dat.starred" ng-click="toggleStarred(true)">star_border</i>
           </div>

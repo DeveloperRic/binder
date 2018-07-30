@@ -79,10 +79,11 @@ app.route("/api/source/listsources").get((req, res) => {
   res.status(200).send(sdb.sources);
 });
 
-app.route("/api/source/beginconnect").post((req, res) => {
+app.route("/api/source/:sourceId/beginconnect").post((req, res) => {
   var result = sdb.beginConnect(
-    req.body.sourceid,
+    req.params.sourceId,
     req.body.uid,
+    req.body.forceUpdate,
     authUrl => {
       res.status(206).send(authUrl);
     },
@@ -102,9 +103,9 @@ app.route("/api/source/beginconnect").post((req, res) => {
   }
 });
 
-app.route("/api/source/finishconnect").post((req, res) => {
+app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
   var result = sdb.finishConnect(
-    req.body.sourceid,
+    req.params.sourceId,
     req.body.uid,
     req.body.code,
     () => {
