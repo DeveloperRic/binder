@@ -374,18 +374,20 @@ client.controller("connectCtrl", function(
   $scope.responseReady = false;
   $scope.authcode = "";
   $scope.onResponse = () => {
-    $.post("api/source/" + $scope.selected.id + "/finishconnect", {
-      uid: $rootScope.user().uid,
-      code: $scope.authcode
-    })
-      .done(data => {
-        $rootScope.loggedInUser = data;
-        $scope.onConnect($scope.selected.id);
+    $http
+      .post("api/source/" + $scope.selected.id + "/finishconnect", {
+        uid: $rootScope.user().uid,
+        code: $scope.authcode
       })
-      .fail((xhr, status, error) => {
-        $window.alert("(" + error.status + ") -> " + error.data);
-        console.log(xhr.responseText);
-      });
+      .then(
+        response => {
+          $rootScope.loggedInUser = response.data;
+          $scope.onConnect($scope.selected.id);
+        },
+        error => {
+          $window.alert("(" + error.status + ") -> " + error.data);
+        }
+      );
   };
   $scope.hasConnected = false;
   $scope.onConnect = function(sourceid) {

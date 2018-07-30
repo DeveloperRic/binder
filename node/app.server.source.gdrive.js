@@ -31,10 +31,10 @@ exports.init = function() {
           return console.log("Error loading client secret file: ", err);
         }
       }
-      const credentials = JSON.parse(content);
-      client_secret = credentials.installed.client_secret;
-      client_id = credentials.installed.client_id;
-      redirect_uris = credentials.installed.redirect_uris;
+      const credentials = JSON.parse(content).installed;
+      client_secret = credentials.client_secret;
+      client_id = credentials.client_id;
+      redirect_uris = credentials.redirect_uris;
     }
   );
 
@@ -138,7 +138,6 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
     var oAuth2Client = authSession.authclient;
     oAuth2Client.getToken(code, (err, token) => {
       if (err) {
-        console.log(err);
         onFail(err);
       } else {
         oAuth2Client.setCredentials(token);

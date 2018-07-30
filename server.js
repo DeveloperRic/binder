@@ -110,14 +110,16 @@ app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
     req.body.code,
     () => {
       var user = udb.getUserWithUID(req.body.uid);
-      if (!user.connectedSources.includes(req.body.sourceid)) {
-        user.connectedSources.push(req.body.sourceid);
+      if (!user.connectedSources.includes(req.params.sourceId)) {
+        user.connectedSources.push(req.params.sourceId);
         udb.saveUsers();
       }
       res.status(200).send(user);
     },
     error => {
-      res.status(error.errors[0].code).send(error.errors);
+      res
+        .status(error.code ? error.code : error.errors[0].code)
+        .send(error.errors);
     }
   );
   if (result != 100) {

@@ -10,10 +10,10 @@ exports.sources = [
   //new Source("onedrive365", "Office 365")
 ];
 
-exports.getSource = function(sourceid) {
+exports.getSource = function(sourceId) {
   var source = null;
   this.sources.forEach(asource => {
-    if (asource.id == sourceid) {
+    if (asource.id == sourceId) {
       source = source;
     }
   });
@@ -23,8 +23,8 @@ exports.getSource = function(sourceid) {
 gdrive.init();
 onedrive.init();
 
-exports.beginConnect = function(sourceid, uid, forceUpdate, onPrompt, onSuccess, onFail) {
-  switch (sourceid) {
+exports.beginConnect = function(sourceId, uid, forceUpdate, onPrompt, onSuccess, onFail) {
+  switch (sourceId) {
     case "gdrive":
       gdrive.beginAuthorize(uid, forceUpdate, onPrompt, onSuccess);
       break;
@@ -40,8 +40,8 @@ exports.beginConnect = function(sourceid, uid, forceUpdate, onPrompt, onSuccess,
   return 100;
 };
 
-exports.finishConnect = function(sourceid, uid, code, onSuccess, onFail) {
-  switch (sourceid) {
+exports.finishConnect = function(sourceId, uid, code, onSuccess, onFail) {
+  switch (sourceId) {
     case "gdrive":
       gdrive.finishAuthorize(uid, code, onSuccess, onFail);
       break;

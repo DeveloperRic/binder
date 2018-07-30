@@ -7,7 +7,7 @@ const USER_SESSIONS_FILE_PATH = "server_data/app.server.user.sessions.json";
 var users = [];
 var userSessions = [];
 
-// DON'T FORGET TO SECURE USERS WITH NON-SEQUENTIAL IDS AND RANDOMIZED SESSION KEYS!!!
+// DON'T FORGET TO CHANGE STORAGE FROM .json TO SQL!!!
 
 exports.loadUsers = function() {
   fs.readFile(USERS_FILE_PATH, (err, content) => {
