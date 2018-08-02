@@ -62,6 +62,11 @@ app.route("/api/user/loginuser").post((req, res) => {
   }
 });
 
+app.route("/api/user/logoutuser").post((req, res) => {
+  udb.endUserSession(req.body.uid);
+  res.sendStatus(200);
+});
+
 app.route("/api/user/:uid").get((req, res) => {
   var result = udb.getUserWithSessionKey(req.params.uid, req.query.sessionKey);
   if (result.user) {
@@ -73,6 +78,22 @@ app.route("/api/user/:uid").get((req, res) => {
   } else {
     res.sendStatus(404);
   }
+});
+
+app.route("/api/user/:uid/navigation").get((req, res) => {
+  res.status(200).send(udb.getNavigation(req.params.uid));
+});
+
+app.route("/api/user/:uid/update/:key").post((req, res) => {
+  res
+    .status(200)
+    .send(
+      udb.updateProfile(
+        req.params.uid,
+        req.params.key,
+        req.body[req.params.key]
+      )
+    );
 });
 
 app.route("/api/source/listsources").get((req, res) => {
@@ -94,9 +115,7 @@ app.route("/api/source/:sourceId/beginconnect").post((req, res) => {
       }
       res.sendStatus(200);
     },
-    error => {
-      res.status(error.errors[0].code).send(error.errors);
-    }
+    error => handleError(res, error)
   );
   if (result != 100) {
     res.sendStatus(result);
@@ -116,11 +135,29 @@ app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
       }
       res.status(200).send(user);
     },
-    error => {
-      res
-        .status(error.code ? error.code : error.errors[0].code)
-        .send(error.errors);
-    }
+    error => handleError(res, error)
+  );
+  if (result != 100) {
+    res.sendStatus(result);
+  }
+});
+
+app.route("/api/source/:sourceId/disconnect").post((req, res) => {
+  var result = sdb.disconnect(
+    req.params.sourceId,
+    req.body.uid,
+    () => {
+      var user = udb.getUserWithUID(req.body.uid);
+      if (user.connectedSources.includes(req.params.sourceId)) {
+        user.connectedSources.splice(
+          user.connectedSources.indexOf(req.params.sourceId),
+          1
+        );
+        udb.saveUsers();
+      }
+      res.status(200).send(user);
+    },
+    error => handleError(res, error)
   );
   if (result != 100) {
     res.sendStatus(result);
@@ -154,11 +191,7 @@ app.route("/api/source/:sourceId/:folderId/listfiles").get((req, res) => {
     files => {
       res.status(200).send(files);
     },
-    error => {
-      res
-        .status(error.code ? error.code : error.errors[0].code)
-        .send(error.errors);
-    }
+    error => handleError(res, error)
   );
 });
 
@@ -171,11 +204,7 @@ app.route("/api/source/:sourceId/:fileId/getfilemetadata").get((req, res) => {
     file => {
       res.status(200).send(file);
     },
-    error => {
-      res
-        .status(error.code ? error.code : error.errors[0].code)
-        .send(error.errors);
-    }
+    error => handleError(res, error)
   );
 });
 
@@ -187,9 +216,7 @@ app.route("/api/source/updatefilemetadata").post((req, res) => {
     ({ data }) => {
       res.status(200).send(data);
     },
-    error => {
-      res.status(error.errors[0].code).send(error.errors);
-    }
+    error => handleError(res, error)
   );
 });
 
@@ -202,9 +229,7 @@ app.route("/api/source/onedrive/:fileId/getfilecollection").get((req, res) => {
     file => {
       res.status(200).send(file);
     },
-    error => {
-      res.status(error.errors[0].code).send(error.errors);
-    }
+    error => handleError(res, error)
   );
 });
 
@@ -215,11 +240,7 @@ app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
     file => {
       res.status(200).send(file);
     },
-    error => {
-      res
-        .status(error.code ? error.code : error.errors[0].code)
-        .send(error.errors);
-    }
+    error => handleError(res, error)
   );
 });
 
@@ -231,6 +252,22 @@ app.route("/*").get((req, res) => {
   // Just send the index.html for other files to support HTML5Mode
   res.sendFile("app.client.router.html", { root: "./html" });
 });
+
+app.use(function(err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
+});
+
+function handleError(res, error) {
+  try {
+    res
+      .status(error.code ? error.code : error.errors[0].code)
+      .send(error.errors ? error.errors : error);
+  } catch (e) {
+    // console.error(error);
+    res.status(500).send(error);
+  }
+}
 
 // --------------------------------------------------
 

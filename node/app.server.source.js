@@ -23,7 +23,14 @@ exports.getSource = function(sourceId) {
 gdrive.init();
 onedrive.init();
 
-exports.beginConnect = function(sourceId, uid, forceUpdate, onPrompt, onSuccess, onFail) {
+exports.beginConnect = function(
+  sourceId,
+  uid,
+  forceUpdate,
+  onPrompt,
+  onSuccess,
+  onFail
+) {
   switch (sourceId) {
     case "gdrive":
       gdrive.beginAuthorize(uid, forceUpdate, onPrompt, onSuccess);
@@ -47,6 +54,21 @@ exports.finishConnect = function(sourceId, uid, code, onSuccess, onFail) {
       break;
     case "onedrive":
       onedrive.finishAuthorize(uid, code, onSuccess, onFail);
+      break;
+
+    default:
+      return 400;
+  }
+  return 100;
+};
+
+exports.disconnect = function(sourceId, uid, onSuccess, onFail) {
+  switch (sourceId) {
+    case "gdrive":
+      gdrive.unAuthorize(uid, onSuccess, onFail);
+      break;
+    case "onedrive":
+      onedrive.unAuthorize(uid, onSuccess, onFail);
       break;
 
     default:

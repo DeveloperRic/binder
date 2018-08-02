@@ -24,17 +24,33 @@
 </head>
 
 <body>
-	<div id="nav" class="background-accent">
-		<div class="nav-title background-secondary text-color-primary">Binder</div>
+	<div id="nav">
+		<div class="nav-title text-color-primary">Binder</div>
+		<div class="divider"></div>
 		<div class="nav-buttons">
 			<div class="nav-button background-accent-light" ng-repeat="item in navButtons">
-				<a href="{{item.url}}" class="text-color-inverse">{{item.text}}</a>
+				<a ng-href="dashboard?sourceId={{item.source}}&folderId={{item.folder}}">{{item.text}}</a>
+			</div>
+		</div>
+		<div class="divider"></div>
+		<div class="account" ng-if="loggedInUser">
+			<div class="account-avatars">
+				<img ng-src="loggedInUser.avatar" ng-if="loggedInUser.profile.avatar">
+				<i class="material-icons account-avatar" ng-if="!loggedInUser.profile.avatar">face</i>
+			</div>
+			<div>
+				{{loggedInUser.profile.firstname}} {{loggedInUser.profile.lastname}}
+				<div class="account-actions">
+					<a class="text-color-primary" href="account">Account</a>
+					<span class="action-separator text-color-muted">●</span>
+					<a class="text-color-primary" href="" ng-click="logoutUser()">Logout</a>
+				</div>
 			</div>
 		</div>
 	</div>
 
 	<div class="stages">
-		<div ng-view></div>
+		<ng-view></ng-view>
 	</div>
 </body>
 

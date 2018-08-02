@@ -1,0 +1,87 @@
+<div id="accountStage" class="stage">
+  <div class="stage-title background-primary">
+    <h2>My account</h2>
+  </div>
+  <section class="container">
+    <h3 class="section-title">Sources</h3>
+    Click on a source to connect or disconnect it.
+    <div class="sources">
+      <div class="source" ng-repeat="source in sources" ng-class="{'source-disconnected': !sourceConnectedWrapper[source.id]}"
+        ng-click="toggleSource(source)">
+        {{source.name}}
+        <span class="status">{{sourceConnectedWrapper[source.id] ? 'Connected' : 'Disconnected'}}</span>
+      </div>
+      <div class="source source-fail" ng-if="sources.length == 0">
+        Failed to load sources
+        <span class="status">Please try again later</span>
+      </div>
+    </div>
+  </section>
+  <section class="container">
+    <h3 class="section-title">Profile</h3>
+    <form name="profileForm">
+      <table class="background-primary">
+        <tr>
+          <td>Firstname</td>
+          <td>
+            <div class="input">
+              <input type="text" name="firstname" ng-model="profile.firstname" />
+              <div class="label-floor"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>Lastname</td>
+          <td>
+            <div class="input">
+              <input type="text" name="lastname" ng-model="profile.lastname" />
+              <div class="label-floor"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <button type="submit" class="btn background-accent-light" ng-click="updateProfile()">Update profile</button>
+          </td>
+          <td>
+            <div class="profile-status" ng-show="profileStatus">{{profileStatus}}</div>
+          </td>
+        </tr>
+      </table>
+    </form>
+  </section>
+  <section class="container">
+    <h3 class="section-title">Email</h3>
+    <form name="accountForm">
+      <table class="background-primary">
+        <tr>
+          <td>Email Address</td>
+          <td>
+            <div class="input">
+              <input type="email" name="email" ng-model="profile.email" required placeholder="email@example.com" />
+              <div class="label-floor"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <button type="submit" class="btn background-accent-light" ng-click="updateEmail()">Update email address</button>
+          </td>
+          <td>
+            <div class="profile-status" ng-show="emailStatus">{{emailStatus}}</div>
+          </td>
+        </tr>
+      </table>
+    </form>
+  </section>
+  <section class="container">
+    <h4 class="section-title important-title">Password</h4>
+    <p>The following link will email you with instructions on resetting your password.</p>
+    <button class="btn background-accent-light" ng-click="updateEmail()">Reset my password</button>
+  </section>
+  <section class="container">
+    <h4 class="section-title important-title">Delete Account</h4>
+    <p>If you're sure you want to delete your account, click the link below and instructions will be emailed to you.</p>
+    <button class="btn background-secondary important-title" ng-click="updateEmail()">Delete my account</button>
+  </section>
+</div>

@@ -15,6 +15,10 @@ client.config(function($locationProvider, $routeProvider) {
       templateUrl: "app.client.stage.index.html",
       controller: "welcomeCtrl"
     })
+    .when("/index", {
+      templateUrl: "app.client.stage.index.html",
+      controller: "welcomeCtrl"
+    })
     .when("/login", {
       templateUrl: "app.client.stage.login.html",
       controller: "loginCtrl"
@@ -31,13 +35,23 @@ client.config(function($locationProvider, $routeProvider) {
       templateUrl: "app.client.stage.dashboard.html",
       controller: "dashboardCtrl"
     })
+    .when("/account", {
+      templateUrl: "app.client.stage.account.html",
+      controller: "accountCtrl"
+    })
     .otherwise({
       template: "<h1>Error 404</h1><p>The requested page was not found</p>"
     });
 });
 
-client.run(function($rootScope, $cookies, $location, $httpParamSerializer) {
-  $rootScope.navButtons = [
+client.run(function(
+  $rootScope,
+  $cookies,
+  $location,
+  $window,
+  $httpParamSerializer
+) {
+  $rootScope.staticNavButtons = [
     {
       url: "connect/onedrive",
       text: "Onedrive callback"
@@ -106,6 +120,16 @@ client.run(function($rootScope, $cookies, $location, $httpParamSerializer) {
       } else if (onFail) {
         onFail(false);
       }
+    }
+  };
+  $rootScope.logoutUser = function() {
+    if ($cookies.getObject("app.client.data.loggedInUser")) {
+      $cookies.remove("app.client.data.loggedInUser");
+    }
+    if ($rootScope.loggedInUser) {
+      $.post("api/user/logoutuser", { uid: $rootScope.loggedInUser });
+      $rootScope.loggedInUser = null;
+      $window.location.href = "/login";
     }
   };
   $rootScope.emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -405,7 +429,11 @@ client.controller("connectCtrl", function(
     onedrive365: false
   };
   $scope.onContinue = function() {
-    $window.location.href = "/dashboard";
+    if ($routeParams.callback) {
+      $window.location.href = $routeParams.callback;
+    } else {
+      $window.location.href = "/dashboard";
+    }
   };
 });
 
@@ -696,9 +724,12 @@ client.controller("dashboardCtrl", function(
       if (user.connectedSources.length == 0) {
         $location.url("/connect");
         $location.replace();
-        $scope.$apply();
       }
       $scope.user = user;
+      $.get("api/user/" + user.uid + "/navigation").done(navigation => {
+        $rootScope.navButtons = navigation;
+        $scope.$apply();
+      });
       $scope.sorting.availableMethods.forEach(method => {
         if (method.enabled) {
           $scope.sorting.orderBy.push(method);
@@ -884,7 +915,6 @@ client.controller("dashboardCtrl", function(
                       data.value[0].lastModifiedBy.user.displayName
                   });
                 }
-                x;
               } catch (error) {}
             }
             $scope.$apply();
@@ -942,5 +972,110 @@ client.controller("dashboardCtrl", function(
       .fail(function(xhr, status, error) {
         console.log(JSON.parse(xhr.responseText));
       });
+  };
+});
+
+client.controller("accountCtrl", function(
+  $rootScope,
+  $scope,
+  $location,
+  $httpParamSerializer,
+  $interval
+) {
+  $scope.sources = [];
+  $scope.sourceConnectedWrapper = {};
+  $scope.profile = {
+    firstname: "",
+    lastname: "",
+    email: ""
+  };
+  $rootScope.user(
+    user => {
+      $scope.user = user;
+      $.get("api/user/" + user.uid + "/navigation").done(navigation => {
+        $rootScope.navButtons = navigation;
+        $scope.$apply();
+      });
+      $rootScope.sources(
+        sources => {
+          $scope.sources = sources;
+          sources.forEach(source => {
+            $scope.sourceConnectedWrapper = Object.assign(
+              $scope.sourceConnectedWrapper,
+              {
+                [source.id]: user.connectedSources.includes(source.id)
+              }
+            );
+          });
+          $scope.$apply();
+        },
+        () => {}
+      );
+      $scope.profile.firstname = $scope.user.profile.firstname;
+      $scope.profile.lastname = $scope.user.profile.lastname;
+      $scope.profile.email = $scope.user.email;
+    },
+    () => {
+      $location.url(
+        "/login?" + $httpParamSerializer({ callback: $location.url() })
+      );
+      $location.replace();
+    }
+  );
+  $scope.toggleSource = function(source) {
+    if ($scope.user.connectedSources.includes(source.id)) {
+      $.post("api/source/" + source.id + "/disconnect", {
+        uid: $rootScope.user().uid
+      })
+        .done(user => {
+          $rootScope.loggedInUser = user;
+          $scope.sourceConnectedWrapper[source.id] = false;
+          $scope.$apply();
+        })
+        .fail(function(xhr, status, error) {
+          console.log(JSON.parse(xhr.responseText));
+        });
+    } else {
+      $location.url(
+        "/connect?" +
+          $httpParamSerializer({ forceUpdate: true, callback: $location.url() })
+      );
+      $location.replace();
+    }
+  };
+  $scope.updateProfile = function() {
+    $.post("api/user/" + $rootScope.user().uid + "/update/profile", {
+      profile: {
+        firstname: $scope.profile.firstname,
+        lastname: $scope.profile.lastname
+      }
+    }).done(user => {
+      $rootScope.loggedInUser = user;
+      $scope.profileStatus = "Profile Updated!";
+      $scope.$apply();
+      $interval(
+        () => {
+          $scope.profileStatus = null;
+        },
+        5000,
+        1
+      );
+    });
+  };
+  $scope.updateEmail = function() {
+    $.post("api/user/" + $rootScope.user().uid + "/update/email", {
+      email: $scope.profile.email
+    }).done(user => {
+      $rootScope.loggedInUser = user;
+      $scope.emailStatus = "Email Updated!";
+      $scope.$apply();
+      $interval(
+        () => {
+          $scope.emailStatus = null;
+        },
+        5000,
+        1
+      );
+    });
   };
 });

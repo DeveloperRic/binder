@@ -9,8 +9,8 @@
           </div>
           <div class="invisible label-floor"></div>
         </div>
-        <img ng-show="currentFolderSource=='gdrive'" src="../css/img/google_drive_lockup.png">
-        <img ng-show="currentFolderSource=='onedrive'" src="../css/img/onedrive_lockup.png">
+        <img ng-if="currentFolderSource=='gdrive'" src="../css/img/google_drive_lockup.png">
+        <img ng-if="currentFolderSource=='onedrive'" src="../css/img/onedrive_lockup.png">
       </div>
       <div class="sorting label" ng-if="currentFolderSource && currentFolder">
         <div class="label-text inline">

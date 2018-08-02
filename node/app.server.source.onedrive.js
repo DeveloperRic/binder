@@ -32,7 +32,7 @@ exports.init = function() {
   fs.readFile(TOKEN_PATH, (err, content) => {
     if (!err) {
       userTokens = JSON.parse(content);
-    } else if (err.code == 'ENOENT') {
+    } else if (err.code == "ENOENT") {
       saveUserTokens();
     }
   });
@@ -53,19 +53,20 @@ function setUserToken(uid, token) {
   var expiry = new Date();
   expiry.setTime(expiry.getTime() + (token.expires_in - 10) * 1000);
   var newToken = { uid: uid, token: token, expires: expiry.getTime() };
-  if (userToken == null) {
+  if (userToken == null && token != null) {
+    // if a token doesn't exist and there is a token to add
     userTokens.push(newToken);
-  } else {
-    var newArray = [];
-    userTokens.forEach(utoken => {
-      if (utoken.uid != uid) {
-        newArray.push(utoken);
-      } else if (token != null) {
-        newArray.push(newToken);
+  } else if (token == null) {
+    // if a token exists but you are trying to remove it
+    for (let i in userTokens) {
+      if (userTokens[i].uid == uid) {
+        userTokens.splice(i, 1);
+        break;
       }
-    });
-    userTokens.length = 0;
-    newArray.forEach(utoken => userTokens.push(utoken));
+    }
+  } else {
+    // otherwise replace the current token with the new one
+    userToken = newToken;
   }
   saveUserTokens();
 }
@@ -76,7 +77,13 @@ function saveUserTokens() {
   });
 }
 
-exports.beginAuthorize = function(uid, forceUpdate, onPrompt, onSuccess, onFail) {
+exports.beginAuthorize = function(
+  uid,
+  forceUpdate,
+  onPrompt,
+  onSuccess,
+  onFail
+) {
   var userToken = getUserToken(uid);
   if (userToken && !forceUpdate) {
     if (new Date().getTime() < userToken.expires) {
@@ -93,9 +100,7 @@ exports.beginAuthorize = function(uid, forceUpdate, onPrompt, onSuccess, onFail)
       // "&redirect_uri=" +
       // encodeURIComponent("http://localhost:8080/connect/onedrive") +
       "&scope=" +
-      encodeURIComponent(
-        "offline_access user.read files.read.all"
-      );
+      encodeURIComponent("offline_access user.read files.read.all");
     onPrompt(url);
   }
 };
@@ -148,6 +153,17 @@ function refreshAccessToken(uid, onSuccess, onFail) {
     }
   );
 }
+
+exports.unAuthorize = function(uid, onSuccess, onFail) {
+  setUserToken(uid, null);
+  if (getUserToken(uid) == null) {
+    onSuccess();
+  } else {
+    onFail({
+      errors: [{ code: 500, message: "Couldn't disconnect user's onedrive" }]
+    });
+  }
+};
 
 exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
   var requestUrl = "/me/drive/items/" + folderId + "/children";

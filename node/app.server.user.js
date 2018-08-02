@@ -134,6 +134,33 @@ function saveUserSessions() {
   });
 }
 
+exports.updateProfile = function(uid, key, newValue) {
+  var user = this.getUserWithUID(uid);
+  user[key] = newValue;
+  this.saveUsers();
+  return user;
+};
+
+exports.getNavigation = function(uid) {
+  return [
+    {
+      source: "all",
+      folder: "root",
+      text: "Home"
+    },
+    {
+      source: "gdrive",
+      folder: "root",
+      text: "Google Drive"
+    },
+    {
+      source: "onedrive",
+      folder: "root",
+      text: "Onedrive"
+    }
+  ];
+};
+
 function newUserObject(
   uid,
   email,
@@ -148,6 +175,11 @@ function newUserObject(
     connectedSources: connectedSources,
     drive: {
       scopeLevel: driveScopeLevel
+    },
+    profile: {
+      firstname: "Unnamed",
+      lastname: "user",
+      avatar: null
     }
   };
 }
