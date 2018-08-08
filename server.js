@@ -2,14 +2,20 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
+const fs = require("fs");
 const url = require("url");
 const udb = require("./node/app.server.user");
 const sdb = require("./node/app.server.source");
 const onedrive = require("./node/app.server.source.onedrive");
+const email = require("./node/app.server.email");
 
 var app = express();
 
 // DON'T FORGET TO MAKE THIS WEB APP HTTPS!!!
+// ALSO MAKE SURE ALL MODULES USE THE UPDATED IP ADDRESS!
+//  modules to look out for:
+//   - app.server.email
+//   - app.server.source.onedrive.js
 
 //app.use("/node", express.static("./node"));
 app.use("/angular", express.static("./angular"));
@@ -244,13 +250,48 @@ app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
   );
 });
 
+app.route("/api/email/:templateId").get((req, res) => {
+  res.sendFile("app.email." + req.params.templateId + ".html", {
+    root: "./html"
+  });
+});
+
+app.route("/api/email/:templateId/send").post((req, res) => {
+  email.send(
+    req.params.templateId,
+    req.body.uid,
+    req.body.placeholders,
+    () => res.sendStatus(200),
+    (code, err) => {
+      res.status(code).send(err);
+      console.log(err);
+    }
+  );
+});
+
 app.route("/app.client.*").get((req, res) => {
   res.sendFile(req.originalUrl.substr(1), { root: "./html" });
 });
 
 app.route("/*").get((req, res) => {
-  // Just send the index.html for other files to support HTML5Mode
-  res.sendFile("app.client.router.html", { root: "./html" });
+  fs.exists(
+    "./html/app.client.stage." + req.url.substr(1) + ".html",
+    exists => {
+      if (exists) {
+        res.sendFile("app.client.router.html", {
+          root: "./html"
+        });
+      } else {
+        fs.exists(req.url.substr(1), exists => {
+          if (exists) {
+            res.sendFile(req.url.substr(1));
+          } else {
+            res.sendFile("app.client.landing.html", { root: "./html" });
+          }
+        });
+      }
+    }
+  );
 });
 
 app.use(function(err, req, res, next) {
@@ -264,14 +305,14 @@ function handleError(res, error) {
       .status(error.code ? error.code : error.errors[0].code)
       .send(error.errors ? error.errors : error);
   } catch (e) {
-    // console.error(error);
+    //  console.error(error);
     res.status(500).send(error);
   }
 }
 
 // --------------------------------------------------
 
-var server = app.listen(8080, () => {
+var server = app.listen(8080, "localhost", () => {
   udb.loadUsers();
   console.log("Binder server launched on port 8080");
 });

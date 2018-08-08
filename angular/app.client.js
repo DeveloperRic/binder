@@ -11,12 +11,8 @@ const USER_SESSION_EXPIRATION_SECONDS = 3600;
 client.config(function($locationProvider, $routeProvider) {
   $locationProvider.html5Mode(true);
   $routeProvider
-    .when("/", {
-      templateUrl: "app.client.stage.index.html",
-      controller: "welcomeCtrl"
-    })
-    .when("/index", {
-      templateUrl: "app.client.stage.index.html",
+    .when("/welcome", {
+      templateUrl: "app.client.stage.welcome.html",
       controller: "welcomeCtrl"
     })
     .when("/login", {
@@ -987,7 +983,8 @@ client.controller("accountCtrl", function(
   $scope.profile = {
     firstname: "",
     lastname: "",
-    email: ""
+    email: "",
+    password: ""
   };
   $rootScope.user(
     user => {
@@ -1063,19 +1060,37 @@ client.controller("accountCtrl", function(
     });
   };
   $scope.updateEmail = function() {
-    $.post("api/user/" + $rootScope.user().uid + "/update/email", {
-      email: $scope.profile.email
-    }).done(user => {
-      $rootScope.loggedInUser = user;
-      $scope.emailStatus = "Email Updated!";
+    if ($scope.profile.email != $rootScope.user().email) {
+      if ($scope.profile.password == $rootScope.user().password) {
+        var oldEmailAddress = $rootScope.user().email;
+        $.post("api/user/" + $rootScope.user().uid + "/update/email", {
+          email: $scope.profile.email
+        }).done(user => {
+          $rootScope.loggedInUser = user;
+          $scope.emailStatus = "Email Updated!";
+          $scope.$apply();
+          $interval(
+            () => {
+              $scope.emailStatus = null;
+            },
+            5000,
+            1
+          );
+          $.post("api/email/emailChanged/send", {
+            uid: user.uid,
+            placeholders: {
+              oldEmailAddress: oldEmailAddress,
+              newEmailAddress: user.profile.email
+            }
+          });
+        });
+      } else {
+        $scope.emailStatus = "Incorrect password";
+        $scope.$apply();
+      }
+    } else {
+      $scope.emailStatus = "Your email address is unchanged.";
       $scope.$apply();
-      $interval(
-        () => {
-          $scope.emailStatus = null;
-        },
-        5000,
-        1
-      );
-    });
+    }
   };
 });

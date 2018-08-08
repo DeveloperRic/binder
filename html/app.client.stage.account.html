@@ -52,6 +52,7 @@
   </section>
   <section class="container">
     <h3 class="section-title">Email</h3>
+    <p>Because your email is required to sign in you must re-enter your account password in order to change it.</p>
     <form name="accountForm">
       <table class="background-primary">
         <tr>
@@ -59,6 +60,15 @@
           <td>
             <div class="input">
               <input type="email" name="email" ng-model="profile.email" required placeholder="email@example.com" />
+              <div class="label-floor"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>Password</td>
+          <td>
+            <div class="input">
+              <input type="password" name="password" ng-model="profile.password" required />
               <div class="label-floor"></div>
             </div>
           </td>

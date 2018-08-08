@@ -1,0 +1,86 @@
+<html ng-app="landing">
+
+<head>
+  <base href="/">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Welcome to Binder</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Bitter|Roboto+Slab|Montserrat" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/app.client.landing.css" rel="stylesheet">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.2/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.2/angular-cookies.js"></script>
+
+  <script src="../angular/app.client.landing.js"></script>
+</head>
+
+<body>
+  <header>
+    <nav>
+      <div>
+        <span class="nav-logo">Binder</span>
+      </div>
+      <div>
+        <a class="nav-new-account" href="/welcome">Get started</a>
+        <a class="nav-signin" href="/login">Sign in</a>
+      </div>
+    </nav>
+    <div class="header-title">
+      <div>
+        Ever wanted to manage all your online files
+        <span class="focus">at the same time</span>?
+        <br/> Binder is for you!
+      </div>
+    </div>
+    <a href="#intro" class="header-subtitle">
+      See how Binder can help you
+    </a>
+  </header>
+
+  <section id="intro" class="parallax">
+    <div class="section-title">
+      <h1>Binder brings cloud storage services together.</h1>
+    </div>
+    <div class="row">
+      <div class="graphic col-md-5">
+        <div class="graphic-box">
+          <span class="binder-logo">Binder</span>
+          <div class="source-box">
+            <img class="source-graphic" src="../css/img/dropbox_lockup.png">
+            <img class="source-graphic" src="../css/img/google_drive_lockup.png">
+            <img class="source-graphic" src="../css/img/onedrive_lockup.png">
+          </div>
+        </div>
+      </div>
+      <div class="desc col-md-7">
+        <p>Each online service has its benefits, but none of them can provide a cross-service interface.</p>
+        <p>That's where Binder comes in. Binder is able to
+          <b>simultaneously query all your registered services</b> so you don't have to fuss around with multiple tabs and/or
+          windows.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="parallax">
+    <div class="section-title">
+      <h1>How does it work?</h1>
+    </div>
+  </section>
+
+  <section id="getstarted" class="parallax">
+    <a href="/welcome">
+      Enter Binder
+    </a>
+  </section>
+</body>
+
+</html>

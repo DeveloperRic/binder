@@ -6,7 +6,7 @@ const udb = require("./app.server.user");
 
 exports.sources = [
   new Source("gdrive", "Google Drive"),
-  new Source("onedrive", "Onedrive / Office 365")
+  new Source("onedrive", "Onedrive")
   //new Source("onedrive365", "Office 365")
 ];
 

@@ -1,0 +1,11 @@
+@keyframes _rotate-slow {
+  0% {
+    transform: rotate(360deg);
+  }
+}
+
+.anim-rotate-slow:enabled {
+  animation-name: _rotate-slow;
+  animation-duration: 4s;
+  animation-timing-function: linear;
+}
