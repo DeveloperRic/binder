@@ -1,4 +1,4 @@
-const nodemailer = require("nodemailer");
+
 const fs = require("fs");
 const udb = require("./app.server.user");
 
@@ -40,6 +40,9 @@ function qualifyPlaceholders(localPlaceholders, user) {
 }
 
 exports.send = function(templateId, uid, placeholders, onSuccess, onFail) {
+  if (true) { // email is disabled right now due to its current unstable nature
+    return onFail();
+  }
   var template = EMAIL_TEMPLATES[templateId];
   if (!template) {
     return onFail(404, "Invalid templateId!");
