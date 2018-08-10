@@ -9,8 +9,8 @@
           </div>
           <div class="invisible label-floor"></div>
         </div>
-        <img ng-if="currentFolderSource=='gdrive'" src="../css/img/google_drive_lockup.png">
-        <img ng-if="currentFolderSource=='onedrive'" src="../css/img/onedrive_lockup.png">
+        <img class="currentFolderSource" ng-if="currentFolderSource=='gdrive'" src="../css/img/google_drive_lockup.png">
+        <img class="currentFolderSource" ng-if="currentFolderSource=='onedrive'" src="../css/img/onedrive_lockup.png">
       </div>
       <div class="sorting label" ng-if="currentFolderSource && currentFolder">
         <div class="label-text inline">
@@ -22,12 +22,13 @@
                 {{criteria.text}}
               </span>
               <span class="text-color-muted" ng-if="sorting.orderBy.length == 0">&lt; no order &gt;</span>
-              <span class="criteria">▼</span>
+              <span class="criteria" ng-if="!sorting.drawerOpen">▼</span>
+              <span class="criteria" ng-if="sorting.drawerOpen">▲</span>
             </div>
             <div class="label-floor"></div>
           </div>
         </div>
-        <div class="sort-list background-secondary drop-shadow" ng-show="sorting.drawerOpen">
+        <div class="sort-list background-secondary drop-shadow" ng-if="sorting.drawerOpen">
           <div class="criteria" ng-repeat="criteria in sorting.availableMethods" ng-if="currentFolderSource == 'all' || criteria['all'] || criteria[currentFolderSource]"
             ng-click="sorting.onCriteriaClick(criteria)">
             <div class="criteria-rank background-primary" ng-if="criteria.enabled">

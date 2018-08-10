@@ -7,7 +7,7 @@ const url = require("url");
 const udb = require("./node/app.server.user");
 const sdb = require("./node/app.server.source");
 const onedrive = require("./node/app.server.source.onedrive");
-const email = require("./node/app.server.email");
+// const email = require("./node/app.server.email");
 
 var app = express();
 
@@ -102,6 +102,12 @@ app.route("/api/user/:uid/update/:key").post((req, res) => {
     );
 });
 
+app.route("/api/user/:uid/setaccesslevel").post((req, res) => {
+  var user = udb.setAccessLevel(req.params.uid, req.body.newAccessLevel);
+  var failedSources = sdb.updateAccessLevels(req.params.uid);
+  res.status(200).send({ user: user, failedSources: failedSources });
+});
+
 app.route("/api/source/listsources").get((req, res) => {
   res.status(200).send(sdb.sources);
 });
@@ -168,24 +174,6 @@ app.route("/api/source/:sourceId/disconnect").post((req, res) => {
   if (result != 100) {
     res.sendStatus(result);
   }
-});
-
-app.route("/api/source/gdrive/extendscope").post((req, res) => {
-  sdb.extendGDriveScope(
-    req.body.uid,
-    user => {
-      user.connectedSources.splice(user.connectedSources.indexOf("gdrive"), 1);
-      res.status(200).send(user);
-    },
-    () => {
-      res
-        .status(409)
-        .send(
-          "The user hasn't connected to Google Drive." +
-            " Connect to it first before attempting to extend it's scope."
-        );
-    }
-  );
 });
 
 app.route("/api/source/:sourceId/:folderId/listfiles").get((req, res) => {
@@ -257,34 +245,43 @@ app.route("/api/email/:templateId").get((req, res) => {
 });
 
 app.route("/api/email/:templateId/send").post((req, res) => {
-  email.send(
-    req.params.templateId,
-    req.body.uid,
-    req.body.placeholders,
-    () => res.sendStatus(200),
-    (code, err) => {
-      res.status(code).send(err);
-      console.log(err);
-    }
-  );
+  // email is disabled right now due to its current unstable nature
+  //
+  // email.send(
+  //   req.params.templateId,
+  //   req.body.uid,
+  //   req.body.placeholders,
+  //   () => res.sendStatus(200),
+  //   (code, err) => {
+  //     res.status(code).send(err);
+  //     console.log(err);
+  //   }
+  // );
+  res.sendStatus(200);
 });
 
 app.route("/app.client.*").get((req, res) => {
-  res.sendFile(req.originalUrl.substr(1), { root: "./html" });
+  res.sendFile(req.path.substr(1), { root: "./html" });
+});
+
+app.route("/connect/*").get((req, res) => {
+  res.sendFile("app.client.router.html", {
+    root: "./html"
+  });
 });
 
 app.route("/*").get((req, res) => {
   fs.exists(
-    "./html/app.client.stage." + req.url.substr(1) + ".html",
+    "./html/app.client.stage." + req.path.substr(1) + ".html",
     exists => {
       if (exists) {
         res.sendFile("app.client.router.html", {
           root: "./html"
         });
       } else {
-        fs.exists(req.url.substr(1), exists => {
+        fs.exists(req.path.substr(1), exists => {
           if (exists) {
-            res.sendFile(req.url.substr(1));
+            res.sendFile(req.path.substr(1));
           } else {
             res.sendFile("app.client.landing.html", { root: "./html" });
           }
@@ -305,7 +302,6 @@ function handleError(res, error) {
       .status(error.code ? error.code : error.errors[0].code)
       .send(error.errors ? error.errors : error);
   } catch (e) {
-    //  console.error(error);
     res.status(500).send(error);
   }
 }

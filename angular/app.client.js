@@ -318,7 +318,8 @@ client.controller("connectCtrl", function(
   $rootScope,
   $routeParams,
   $http,
-  $window
+  $window,
+  $cookies
 ) {
   $rootScope.user(
     user => {
@@ -388,6 +389,7 @@ client.controller("connectCtrl", function(
       $window.open($scope.redirectURL);
       $scope.responseReady = true;
     } else {
+      $cookies.put("app.client.data.callback", "/connect?forceUpdate=true");
       $window.open($scope.redirectURL, "_self");
     }
   };
@@ -436,10 +438,9 @@ client.controller("connectCtrl", function(
 client.controller("connectOnedriveCtrl", function(
   $scope,
   $rootScope,
-  $window,
-  $http,
   $routeParams,
   $location,
+  $cookies,
   $httpParamSerializer
 ) {
   $scope.resultPending = true;
@@ -476,7 +477,13 @@ client.controller("connectOnedriveCtrl", function(
   );
 
   $scope.onSuccess = function() {
-    $location.url("/connect?" + $httpParamSerializer({ forceUpdate: true }));
+    var callback = $cookies.get("app.client.data.callback");
+    if (callback) {
+      $cookies.remove("app.client.data.callback");
+      $location.url(callback);
+    } else {
+      $location.url("/connect?" + $httpParamSerializer({ forceUpdate: true }));
+    }
     $location.replace();
   };
   $scope.onFail = function() {
@@ -975,6 +982,9 @@ client.controller("accountCtrl", function(
   $rootScope,
   $scope,
   $location,
+  $http,
+  $window,
+  $cookies,
   $httpParamSerializer,
   $interval
 ) {
@@ -1020,12 +1030,13 @@ client.controller("accountCtrl", function(
     }
   );
   $scope.toggleSource = function(source) {
-    if ($scope.user.connectedSources.includes(source.id)) {
+    if ($rootScope.user().connectedSources.includes(source.id)) {
       $.post("api/source/" + source.id + "/disconnect", {
         uid: $rootScope.user().uid
       })
         .done(user => {
           $rootScope.loggedInUser = user;
+          $scope.user = user;
           $scope.sourceConnectedWrapper[source.id] = false;
           $scope.$apply();
         })
@@ -1033,11 +1044,68 @@ client.controller("accountCtrl", function(
           console.log(JSON.parse(xhr.responseText));
         });
     } else {
-      $location.url(
-        "/connect?" +
-          $httpParamSerializer({ forceUpdate: true, callback: $location.url() })
-      );
-      $location.replace();
+      $http
+        .post("api/source/" + source.id + "/beginconnect", {
+          uid: $rootScope.user().uid,
+          forceUpdate: false
+        })
+        .then(
+          response => {
+            if (response.status == 206) {
+              if (source.id == "gdrive") {
+                $location.url(
+                  "/connect?" +
+                    $httpParamSerializer({
+                      callback: $location.url(),
+                      forceUpdate: true,
+                      updateSources: ["gdrive"]
+                    })
+                );
+                $location.replace();
+              } else {
+                $cookies.put("app.client.data.callback", $location.url());
+                $window.open(response.data, "_self");
+              }
+            } else {
+              $window.alert(source.name + " is already connected");
+            }
+          },
+          error => {
+            $window.alert("(" + error.status + ") -> " + error.data);
+          }
+        );
+    }
+  };
+  $scope.setAccessLevel = function(newAccessLevel) {
+    if ($rootScope.user().accessLevel != newAccessLevel) {
+      $.post("api/user/" + $rootScope.user().uid + "/setaccesslevel", {
+        newAccessLevel: newAccessLevel
+      })
+        .done(res => {
+          $rootScope.loggedInUser = res.user;
+          $scope.user = res.user;
+          $scope.sources.forEach(source => {
+            $scope.sourceConnectedWrapper = Object.assign(
+              $scope.sourceConnectedWrapper,
+              {
+                [source.id]: $rootScope
+                  .user()
+                  .connectedSources.includes(source.id)
+              }
+            );
+          });
+          $scope.$apply();
+          if (res.failedSources.length > 0) {
+            $window.alert(
+              "The following sources could not be updated:\n\n" +
+                res.failedSources.join(", ")
+            );
+          }
+        })
+        .fail(function(xhr, status, error) {
+          $window.alert("Binder failed to change your access level settings.");
+          console.log(xhr.responseText);
+        });
     }
   };
   $scope.updateProfile = function() {

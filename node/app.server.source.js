@@ -77,6 +77,17 @@ exports.disconnect = function(sourceId, uid, onSuccess, onFail) {
   return 100;
 };
 
+exports.updateAccessLevels = function(uid) {
+  var failedSources = [];
+  if (!gdrive.resetUserToken(uid)) {
+    failedSources.push("gdrive");
+  }
+  if (!onedrive.resetUserToken(uid)) {
+    failedSources.push("onedrive");
+  }
+  return failedSources;
+};
+
 exports.listFiles = function(
   uid,
   sourceId,

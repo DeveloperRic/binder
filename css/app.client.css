@@ -234,13 +234,16 @@ ul {
 
 #dashboardStage .labelStrip {
   display: flex;
+  padding-top: 20px;
+  padding-bottom: 10px;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 #dashboardStage .label {
   display: inline-flex;
-  margin: 20px 10px 10px 10px;
+  margin: 0 10px;
   padding: 5px;
   align-items: center;
   font-size: 16px;
@@ -273,6 +276,10 @@ ul {
   font-weight: 600;
 }
 
+#dashboardStage .currentFolderSource {
+  margin-right: 20px;
+}
+
 #dashboardStage .sorting {
   display: flex;
   right: 0;
@@ -282,10 +289,12 @@ ul {
 
 #dashboardStage .sorting .inline {
   display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 #dashboardStage .sorting .sort-criteria {
-  margin: 0 5px;
+  margin: 5px 5px 0;
   cursor: pointer;
 }
 
@@ -385,7 +394,7 @@ ul {
 }
 
 #dashboardStage #fileDetailsPane {
-  min-width: 25vw;
+  min-width: 320px;
   max-width: 320px;
   min-height: 100vh;
   position: sticky;
@@ -411,7 +420,13 @@ ul {
 }
 
 #dashboardStage #fileDetailsPane .file-thumbnail .file-thumbnail-text {
-  padding: 30px;
+  display: flex;
+  padding: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex-wrap: wrap;
+  line-break: loose;
 }
 
 #dashboardStage
@@ -488,7 +503,7 @@ ul {
 
 #dashboardStage #fileDetailsPane .file-info .file-info-audio {
   display: flex;
-  margin-top: 20px;
+  margin: 20px -10px 0;
   justify-content: space-evenly;
   font-size: 30px;
 }
@@ -528,16 +543,18 @@ ul {
   top: 0;
 }
 
-#accountStage .sources {
-  margin-top: 20px;
+#accountStage .bubbles {
+  display: flex;
   margin-left: 20px;
+  align-items: center;
   flex-wrap: wrap;
 }
 
-#accountStage .sources .source {
+#accountStage .bubbles .bubble {
   display: inline-flex;
   width: 250px;
   height: 100px;
+  margin-top: 20px;
   margin-left: 20px;
   border-style: solid;
   border-width: 1px;
@@ -553,19 +570,19 @@ ul {
   cursor: pointer;
 }
 
-#accountStage .sources .source:hover {
+#accountStage .bubbles .bubble:hover {
   border-color: #bdbdbd;
 }
 
-#accountStage .sources .source-fail {
+#accountStage .bubbles .bubble-fail {
   background: unset;
 }
 
-#accountStage .sources .source-disconnected {
+#accountStage .bubbles .bubble-negative {
   background: linear-gradient(120deg, #ffe0b2 0%, #ffccbc 100%);
 }
 
-#accountStage .sources .source .status {
+#accountStage .bubbles .bubble .status {
   font-size: 12px;
   margin-top: 5px;
 }
@@ -633,6 +650,7 @@ ul {
 }
 
 .input {
+  padding-top: 2px;
   background-color: #fafafa;
 }
 

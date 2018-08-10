@@ -62,15 +62,15 @@ function setUserToken(uid, token) {
   if (userToken == null && token != null) {
     // if a token doesn't exist and there is a token to add
     userTokens.push({ uid: uid, token: token });
-  } else if (token == null) {
-    // if a token exists but you are trying to remove it
+  } else if (userToken != null && token == null) {
+    // if a token exists and you are trying to remove it
     for (let i in userTokens) {
       if (userTokens[i].uid == uid) {
         userTokens.splice(i, 1);
         break;
       }
     }
-  } else {
+  } else if (token != null) {
     // otherwise replace the current token with the new one
     userToken = token;
   }
@@ -82,6 +82,11 @@ function saveUserTokens() {
     if (err) console.error(err);
   });
 }
+
+exports.resetUserToken = function(uid) {
+  setUserToken(uid, null);
+  return !getUserToken(uid);
+};
 
 function getAuthSession(uid) {
   var authSession = null;
@@ -121,7 +126,7 @@ exports.beginAuthorize = function(uid, forceUpdate, onPrompt, onSuccess) {
 function getAccessToken(uid, oAuth2Client, onPrompt) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: SCOPE_LEVELS[udb.getUserWithUID(uid).drive.scopeLevel]
+    scope: SCOPE_LEVELS[udb.getUserWithUID(uid).accessLevel]
   });
   var authSession = getAuthSession(uid);
   if (authSession != null) {
@@ -160,17 +165,6 @@ exports.unAuthorize = function(uid, onSuccess, onFail) {
         { code: 500, message: "Couldn't disconnect user's google drive" }
       ]
     });
-  }
-};
-
-exports.extendScope = function(uid, onSuccess, onFail) {
-  var user = udb.getUserWithUID(uid);
-  if (user.connectedSources.includes("gdrive")) {
-    user.drive.scopeLevel = 1;
-    setUserToken(uid, null);
-    onSuccess(user);
-  } else {
-    onFail();
   }
 };
 

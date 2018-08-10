@@ -9,6 +9,12 @@ const MICROSOFT_GRAPH_DOMAIN = "https://graph.microsoft.com/v1.0";
 var app_secret;
 var userTokens = [];
 
+// If modifying a user's scope, delete their credentials from onedrive.credentials.json.
+const SCOPE_LEVELS = [
+  "user.read files.read.all",
+  "user.read files.readwrite.all"
+];
+
 // DELETE APP_SECRET PASS IF NOT NEEDED!!!
 // REMEMBER ONEDRIVE API RETURNS A MISSPELLED ACCESS TOKEN IN CREDENTIALS FILE!
 
@@ -51,20 +57,22 @@ function getUserToken(uid) {
 function setUserToken(uid, token) {
   var userToken = getUserToken(uid);
   var expiry = new Date();
-  expiry.setTime(expiry.getTime() + (token.expires_in - 10) * 1000);
+  if (token != null) {
+    expiry.setTime(expiry.getTime() + (token.expires_in - 10) * 1000);
+  }
   var newToken = { uid: uid, token: token, expires: expiry.getTime() };
   if (userToken == null && token != null) {
     // if a token doesn't exist and there is a token to add
     userTokens.push(newToken);
-  } else if (token == null) {
-    // if a token exists but you are trying to remove it
+  } else if (userToken != null && token == null) {
+    // if a token exists and you are trying to remove it
     for (let i in userTokens) {
       if (userTokens[i].uid == uid) {
         userTokens.splice(i, 1);
         break;
       }
     }
-  } else {
+  } else if (token != null) {
     // otherwise replace the current token with the new one
     userToken = newToken;
   }
@@ -76,6 +84,11 @@ function saveUserTokens() {
     if (err) console.error(err);
   });
 }
+
+exports.resetUserToken = function(uid) {
+  setUserToken(uid, null);
+  return !getUserToken(uid);
+};
 
 exports.beginAuthorize = function(
   uid,
@@ -100,7 +113,9 @@ exports.beginAuthorize = function(
       // "&redirect_uri=" +
       // encodeURIComponent("http://localhost:8080/connect/onedrive") +
       "&scope=" +
-      encodeURIComponent("offline_access user.read files.read.all");
+      encodeURIComponent(
+        "offline_access " + SCOPE_LEVELS[udb.getUserWithUID(uid).accessLevel]
+      );
     onPrompt(url);
   }
 };

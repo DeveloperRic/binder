@@ -38,7 +38,7 @@ exports.newUser = function(email, password) {
     user: null
   };
   if (this.getUserWithEmailPassword(email, password).user == null) {
-    var user = newUserObject(uuidv4(), email, password, [], 0);
+    var user = newUserObject(uuidv4(), email, password, [], 1);
     users.push(user);
     this.saveUsers();
     result = {
@@ -134,6 +134,14 @@ function saveUserSessions() {
   });
 }
 
+exports.setAccessLevel = function(uid, newAccessLevel) {
+  var user = this.getUserWithUID(uid);
+  user.accessLevel = newAccessLevel;
+  user.connectedSources.length = 0;
+  this.saveUsers();
+  return user;
+};
+
 exports.updateProfile = function(uid, key, newValue) {
   var user = this.getUserWithUID(uid);
   user[key] = newValue;
@@ -142,40 +150,38 @@ exports.updateProfile = function(uid, key, newValue) {
 };
 
 exports.getNavigation = function(uid) {
-  return [
+  var nav = [
     {
       source: "all",
       folder: "root",
       text: "Home"
-    },
-    {
+    }
+  ];
+  var user = this.getUserWithUID(uid);
+  if (user.connectedSources.includes("gdrive")) {
+    nav.push({
       source: "gdrive",
       folder: "root",
       text: "Google Drive"
-    },
-    {
+    });
+  }
+  if (user.connectedSources.includes("onedrive")) {
+    nav.push({
       source: "onedrive",
       folder: "root",
       text: "Onedrive"
-    }
-  ];
+    });
+  }
+  return nav;
 };
 
-function newUserObject(
-  uid,
-  email,
-  password,
-  connectedSources,
-  driveScopeLevel
-) {
+function newUserObject(uid, email, password, connectedSources, accessLevel) {
   return {
     uid: uid,
     email: email,
     password: password,
     connectedSources: connectedSources,
-    drive: {
-      scopeLevel: driveScopeLevel
-    },
+    accessLevel: accessLevel,
     profile: {
       firstname: "Unnamed",
       lastname: "user",
