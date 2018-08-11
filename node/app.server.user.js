@@ -150,14 +150,15 @@ exports.updateProfile = function(uid, key, newValue) {
 };
 
 exports.getNavigation = function(uid) {
-  var nav = [
-    {
+  var nav = [];
+  var user = this.getUserWithUID(uid);
+  if (user.connectedSources.length > 0) {
+    nav.push({
       source: "all",
       folder: "root",
       text: "Home"
-    }
-  ];
-  var user = this.getUserWithUID(uid);
+    });
+  }
   if (user.connectedSources.includes("gdrive")) {
     nav.push({
       source: "gdrive",

@@ -110,6 +110,8 @@ exports.beginAuthorize = function(
       "?client_id=" +
       app_secret.client_id +
       "&response_type=code" +
+      "&redirect_uri=" +
+      encodeURIComponent("https://binder-211420.appspot.com/connect/onedrive") +
       // "&redirect_uri=" +
       // encodeURIComponent("http://localhost:8080/connect/onedrive") +
       "&scope=" +
@@ -169,7 +171,7 @@ function refreshAccessToken(uid, onSuccess, onFail) {
   );
 }
 
-exports.unAuthorize = function(uid, onSuccess, onFail) {
+function unAuthorize(uid, onSuccess, onFail) {
   setUserToken(uid, null);
   if (getUserToken(uid) == null) {
     onSuccess();
@@ -178,7 +180,9 @@ exports.unAuthorize = function(uid, onSuccess, onFail) {
       errors: [{ code: 500, message: "Couldn't disconnect user's onedrive" }]
     });
   }
-};
+}
+
+exports.unAuthorize = unAuthorize;
 
 exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
   var requestUrl = "/me/drive/items/" + folderId + "/children";
@@ -232,17 +236,52 @@ exports.getFileContent = function(uid, fileId, onSuccess, onFail) {
   sendRequest(uid, "/me/drive/items/" + fileId + "/content", onSuccess, onFail);
 };
 
-function sendRequest(uid, requestUrl, onSuccess, onFail) {
+function sendRequest(uid, requestUrl, onSuccess, onFail, refreshed) {
   var userToken = getUserToken(uid);
   // check user token is still valid
   if (new Date().getTime() >= userToken.expires) {
-    refreshAccessToken(
-      uid,
-      () => {
-        sendRequest(uid, requestUrl, onSuccess, onFail);
-      },
-      onFail
-    );
+    if (!refreshed) {
+      refreshAccessToken(
+        uid,
+        () => {
+          sendRequest(uid, requestUrl, onSuccess, onFail, true);
+        },
+        onFail
+      );
+    } else {
+      unAuthorize(
+        uid,
+        () => {
+          var user = udb.getUserWithUID(uid);
+          if (user && user.connectedSources.includes("onedrive")) {
+            user.connectedSources.splice(
+              user.connectedSources.indexOf("onedrive"),
+              1
+            );
+            udb.saveUsers();
+          }
+          onFail({
+            errors: [
+              {
+                code: 500,
+                message: "The user's onedrive access token is broken :("
+              }
+            ]
+          });
+        },
+        () => {
+          onFail({
+            errors: [
+              {
+                code: 500,
+                message:
+                  "Storage of onedrive tokens is broken :( Please report this!"
+              }
+            ]
+          });
+        }
+      );
+    }
     return;
   }
   // send the request via GET protocol

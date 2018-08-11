@@ -3,7 +3,6 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 
 const fs = require("fs");
-const url = require("url");
 const udb = require("./node/app.server.user");
 const sdb = require("./node/app.server.source");
 const onedrive = require("./node/app.server.source.onedrive");
@@ -38,6 +37,10 @@ app.use(
 );
 
 app.route("/api/user/newuser").post((req, res) => {
+  if (!verifyParams(req.body.email, req.body.password)) {
+    res.sendStatus(400);
+    return;
+  }
   var result = udb.newUser(req.body.email, req.body.password);
   if (result.access) {
     var sessionKey = udb.registerUserSession(
@@ -51,7 +54,10 @@ app.route("/api/user/newuser").post((req, res) => {
 });
 
 app.route("/api/user/loginuser").post((req, res) => {
-  //var q = url.parse(req.url, true);
+  if (!verifyParams(req.body.email, req.body.password, req.body.expiration)) {
+    res.sendStatus(400);
+    return;
+  }
   var result = udb.getUserWithEmailPassword(req.body.email, req.body.password);
   if (result.user) {
     if (result.access) {
@@ -69,11 +75,19 @@ app.route("/api/user/loginuser").post((req, res) => {
 });
 
 app.route("/api/user/logoutuser").post((req, res) => {
+  if (!verifyParams(req.body.uid)) {
+    res.sendStatus(400);
+    return;
+  }
   udb.endUserSession(req.body.uid);
   res.sendStatus(200);
 });
 
 app.route("/api/user/:uid").get((req, res) => {
+  if (!verifyParams(req.params.uid, req.query.sessionKey)) {
+    res.sendStatus(400);
+    return;
+  }
   var result = udb.getUserWithSessionKey(req.params.uid, req.query.sessionKey);
   if (result.user) {
     if (result.access) {
@@ -87,10 +101,18 @@ app.route("/api/user/:uid").get((req, res) => {
 });
 
 app.route("/api/user/:uid/navigation").get((req, res) => {
+  if (!verifyParams(req.params.uid)) {
+    res.sendStatus(400);
+    return;
+  }
   res.status(200).send(udb.getNavigation(req.params.uid));
 });
 
 app.route("/api/user/:uid/update/:key").post((req, res) => {
+  if (!verifyParams(req.params.uid, req.params.key, req.body[req.params.key])) {
+    res.sendStatus(400);
+    return;
+  }
   res
     .status(200)
     .send(
@@ -103,16 +125,24 @@ app.route("/api/user/:uid/update/:key").post((req, res) => {
 });
 
 app.route("/api/user/:uid/setaccesslevel").post((req, res) => {
+  if (!verifyParams(req.params.uid, req.body.newAccessLevel)) {
+    res.sendStatus(400);
+    return;
+  }
   var user = udb.setAccessLevel(req.params.uid, req.body.newAccessLevel);
   var failedSources = sdb.updateAccessLevels(req.params.uid);
   res.status(200).send({ user: user, failedSources: failedSources });
 });
 
-app.route("/api/source/listsources").get((req, res) => {
+app.route("/api/source/list").get((req, res) => {
   res.status(200).send(sdb.sources);
 });
 
 app.route("/api/source/:sourceId/beginconnect").post((req, res) => {
+  if (!verifyParams(req.params.sourceId, req.body.uid, req.body.forceUpdate)) {
+    res.sendStatus(400);
+    return;
+  }
   var result = sdb.beginConnect(
     req.params.sourceId,
     req.body.uid,
@@ -122,8 +152,8 @@ app.route("/api/source/:sourceId/beginconnect").post((req, res) => {
     },
     () => {
       var user = udb.getUserWithUID(req.body.uid);
-      if (!user.connectedSources.includes(req.body.sourceid)) {
-        user.connectedSources.push(req.body.sourceid);
+      if (!user.connectedSources.includes(req.params.sourceId)) {
+        user.connectedSources.push(req.params.sourceId);
       }
       res.sendStatus(200);
     },
@@ -135,6 +165,10 @@ app.route("/api/source/:sourceId/beginconnect").post((req, res) => {
 });
 
 app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
+  if (!verifyParams(req.params.sourceId, req.body.uid, req.body.code)) {
+    res.sendStatus(400);
+    return;
+  }
   var result = sdb.finishConnect(
     req.params.sourceId,
     req.body.uid,
@@ -155,6 +189,10 @@ app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
 });
 
 app.route("/api/source/:sourceId/disconnect").post((req, res) => {
+  if (!verifyParams(req.params.sourceId,req.body.uid)) {
+    res.sendStatus(400);
+    return;
+  }
   var result = sdb.disconnect(
     req.params.sourceId,
     req.body.uid,
@@ -176,7 +214,11 @@ app.route("/api/source/:sourceId/disconnect").post((req, res) => {
   }
 });
 
-app.route("/api/source/:sourceId/:folderId/listfiles").get((req, res) => {
+app.route("/api/source/:sourceId/:folderId/children").get((req, res) => {
+  if (!verifyParams(req.query.uid, req.params.sourceId, req.params.folderId, req.query.params)) {
+    res.sendStatus(400);
+    return;
+  }
   sdb.listFiles(
     req.query.uid,
     req.params.sourceId,
@@ -190,6 +232,10 @@ app.route("/api/source/:sourceId/:folderId/listfiles").get((req, res) => {
 });
 
 app.route("/api/source/:sourceId/:fileId/getfilemetadata").get((req, res) => {
+  if (!verifyParams(req.query.uid, req.params.sourceId, req.params.fileId, req.query.keys)) {
+    res.sendStatus(400);
+    return;
+  }
   sdb.getFileMetadata(
     req.query.uid,
     req.params.sourceId,
@@ -203,6 +249,11 @@ app.route("/api/source/:sourceId/:fileId/getfilemetadata").get((req, res) => {
 });
 
 app.route("/api/source/updatefilemetadata").post((req, res) => {
+  // TODO metadata updates should work for all sources
+  if (!verifyParams(req.body.uid, req.body.fileId, req.body.metadata)) {
+    res.sendStatus(400);
+    return;
+  }
   sdb.updateFileMetadata(
     req.body.uid,
     req.body.fileId,
@@ -215,7 +266,11 @@ app.route("/api/source/updatefilemetadata").post((req, res) => {
 });
 
 app.route("/api/source/onedrive/:fileId/getfilecollection").get((req, res) => {
-  // remember to remove onedrive from app requirements if adding other sources
+  if (!verifyParams(req.query.uid, req.params.fileId, req.query.collection)) {
+    res.sendStatus(400);
+    return;
+  }
+  // TODO remember to remove onedrive from app requirements if adding other sources
   onedrive.getFileCollection(
     req.query.uid,
     req.params.fileId,
@@ -228,6 +283,10 @@ app.route("/api/source/onedrive/:fileId/getfilecollection").get((req, res) => {
 });
 
 app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
+  if (!verifyParams(req.query.uid, req.params.fileId)) {
+    res.sendStatus(400);
+    return;
+  }
   onedrive.getFileContent(
     req.query.uid,
     req.params.fileId,
@@ -239,6 +298,10 @@ app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
 });
 
 app.route("/api/email/:templateId").get((req, res) => {
+  if (!verifyParams(req.params.templateId)) {
+    res.sendStatus(400);
+    return;
+  }
   res.sendFile("app.email." + req.params.templateId + ".html", {
     root: "./html"
   });
@@ -246,6 +309,11 @@ app.route("/api/email/:templateId").get((req, res) => {
 
 app.route("/api/email/:templateId/send").post((req, res) => {
   // email is disabled right now due to its current unstable nature
+  //
+  // if (!verifyParams(req.params.templateId, req.body.uid, req.body.placeholders)) {
+  //   res.sendStatus(400);
+  //   return;
+  // }
   //
   // email.send(
   //   req.params.templateId,
@@ -279,13 +347,7 @@ app.route("/*").get((req, res) => {
           root: "./html"
         });
       } else {
-        fs.exists(req.path.substr(1), exists => {
-          if (exists) {
-            res.sendFile(req.path.substr(1));
-          } else {
-            res.sendFile("app.client.landing.html", { root: "./html" });
-          }
-        });
+        res.sendFile("app.client.landing.html", { root: "./html" });
       }
     }
   );
@@ -295,6 +357,15 @@ app.use(function(err, req, res, next) {
   console.error(err.stack);
   res.status(500).send("Something broke!");
 });
+
+function verifyParams(...params) {
+  for (let i in params) {
+    if (params[i] == null) {
+      return false;
+    }
+  }
+  return true;
+}
 
 function handleError(res, error) {
   try {

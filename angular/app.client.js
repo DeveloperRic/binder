@@ -134,7 +134,7 @@ client.run(function(
   };
   $rootScope.tempSourceList = [];
   $rootScope.sources = function(onSuccess, onFail) {
-    $.get("api/source/listsources", {})
+    $.get("api/source/list", {})
       .done(function(data) {
         $rootScope.tempSourceList = data;
         onSuccess($rootScope.tempSourceList);
@@ -590,6 +590,10 @@ client.controller("dashboardCtrl", function(
       files.forEach(file => $scope.files.push(file));
     }
   };
+  $scope.requestStatus = {
+    loadingChildren: true,
+    errorLoading: false
+  };
   $scope.files = [];
   $scope.currentFolderSource = "all";
   $scope.unifySourceFile = function(sourceId, fileDat) {
@@ -660,6 +664,8 @@ client.controller("dashboardCtrl", function(
       );
       return;
     }
+    $scope.requestStatus.loadingChildren = true;
+    $scope.requestStatus.errorLoading = false;
     $scope.currentFolder = folderId;
     $scope.currentFolderSource = sourceId;
     if (folderId != "root") {
@@ -675,7 +681,7 @@ client.controller("dashboardCtrl", function(
     if (replace) {
       $location.replace();
     }
-    $.get("api/source/" + sourceId + "/" + folderId + "/listfiles", {
+    $.get("api/source/" + sourceId + "/" + folderId + "/children", {
       uid: $rootScope.user().uid,
       params: {
         orderBy: $scope.sorting.orderByStr(sourceId)
@@ -687,10 +693,14 @@ client.controller("dashboardCtrl", function(
           $scope.files.push($scope.unifySourceFile(file.source, file.dat));
         });
         $scope.sorting.sortFiles();
+        $scope.requestStatus.loadingChildren = false;
+        $scope.requestStatus.errorLoading = false;
         $scope.$apply();
       })
       .fail(function(xhr, status, error) {
-        $window.alert("Couldn't load " + sourceId + " files");
+        $scope.requestStatus.loadingChildren = false;
+        $scope.requestStatus.errorLoading = true;
+        $scope.$apply();
         console.log(xhr.responseText);
       });
     $scope.pageStack.length = 0;

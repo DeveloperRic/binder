@@ -41,18 +41,32 @@
         </div>
       </div>
     </div>
-    <div class="file-tray">
+    <div class="error-box" ng-if="requestStatus.loadingChildren">
+      <i class="error-box-loading material-icons">autorenew</i>
+      <h1>Loading files....</h1>
+    </div>
+    <div class="error-box" ng-if="!requestStatus.loadingChildren && requestStatus.errorLoading">
+      <i class="material-icons">error_outline</i>
+      <h1>Couldn't load your files</h1>
+      <h3>If this error persits, try reconnecting your sources to your account.</h3>
+      <h3>For more help contact support.</h3>
+    </div>
+    <div class="error-box" ng-if="!requestStatus.loadingChildren && !requestStatus.errorLoading && files.length == 0">
+      <i class="material-icons">inbox</i>
+      <h1>This folder has no files</h1>
+    </div>
+    <div class="file-tray" ng-if="!requestStatus.loadingChildren && !requestStatus.errorLoading && files.length != 0">
       <div class="tile background-secondary drop-shadow-light" ng-repeat="file in files" ng-click="onFileClick(file)" context-menu="fileContextMenu(file)">
         <div class="tile-top">
-          <img ng-show="!file.isFolder" src="{{file.dat.iconLink}}" />
-          <i class="material-icons" ng-show="file.isFolder">folder</i>
+          <img ng-if="!file.isFolder" src="{{file.dat.iconLink}}" />
+          <i class="material-icons" ng-if="file.isFolder">folder</i>
         </div>
         <div class="tile-content">
           <span class="tile-text">{{file.dat.name}}</span>
         </div>
         <div class="tile-bottom">
-          <img src="../css/img/google_drive_icon_small_20.png" ng-show="file.source=='gdrive'">
-          <img src="../css/img/onedrive_lockup.png" ng-show="file.source=='onedrive'">
+          <img src="../css/img/google_drive_icon_small_20.png" ng-if="file.source=='gdrive'">
+          <img src="../css/img/onedrive_lockup.png" ng-if="file.source=='onedrive'">
         </div>
       </div>
     </div>

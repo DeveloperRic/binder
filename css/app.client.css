@@ -102,6 +102,12 @@ ul {
   white-space: nowrap;
 }
 
+#nav .nav-button:hover {
+  border-top: 1px solid #2e7d32;
+  border-right: 1px solid #2e7d32;
+  border-bottom: 1px solid #2e7d32;
+}
+
 #nav .nav-button a {
   color: #2e7d32;
 }
@@ -298,6 +304,10 @@ ul {
   cursor: pointer;
 }
 
+#dashboardStage .sorting .sort-criteria:hover .label-floor {
+  background-color: #4caf50;
+}
+
 #dashboardStage .sorting .sort-criteria .criteria {
   margin: 0 2px;
 }
@@ -330,6 +340,26 @@ ul {
 
 #dashboardStage .sorting .sort-list .criteria .criteria-rank-item + .criteria-rank-item {
   margin-left: 5px;
+}
+
+#dashboardStage .error-box {
+  display: flex;
+  height: 100%;
+  padding: 20px;
+  flex-flow: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+@keyframes _error-box-rotation {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+#dashboardStage .error-box .error-box-loading {
+  animation: _error-box-rotation 1.5s infinite;
 }
 
 #dashboardStage .file-tray {
