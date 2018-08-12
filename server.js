@@ -379,7 +379,7 @@ function handleError(res, error) {
 
 // --------------------------------------------------
 
-var server = app.listen(8080, "localhost", () => {
+var server = app.listen(8080, () => {
   udb.loadUsers();
   console.log("Binder server launched on port 8080");
 });
