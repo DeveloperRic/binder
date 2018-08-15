@@ -110,10 +110,10 @@ exports.beginAuthorize = function(
       "?client_id=" +
       app_secret.client_id +
       "&response_type=code" +
-      // "&redirect_uri=" +
-      // encodeURIComponent("https://binder-211420.appspot.com/connect/onedrive") +
       "&redirect_uri=" +
-      encodeURIComponent("http://localhost:8080/connect/onedrive") +
+      encodeURIComponent("https://binder-211420.appspot.com/connect/onedrive") +
+      // "&redirect_uri=" +
+      // encodeURIComponent("http://localhost:8080/connect/onedrive") +
       "&scope=" +
       encodeURIComponent(
         "offline_access " + SCOPE_LEVELS[udb.getUserWithUID(uid).accessLevel]
