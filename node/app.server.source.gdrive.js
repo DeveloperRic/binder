@@ -28,7 +28,7 @@ exports.init = function() {
         if (err.code == "ENOENT") {
           return console.log("Couldn't find gdrive client secret!");
         } else {
-          return console.log("Error loading client secret file: ", err);
+          return console.log("Error loading gdrive client secret file: ", err);
         }
       }
       const credentials = JSON.parse(content).installed;
@@ -176,7 +176,7 @@ exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
         pageSize: 28,
         q: "'" + folderId + "' in parents",
         fields:
-          "nextPageToken, files(id, name, mimeType, webViewLink, iconLink)"
+          "nextPageToken, files(id, name, mimeType, webViewLink, iconLink, thumbnailLink)"
       },
       params
     ),

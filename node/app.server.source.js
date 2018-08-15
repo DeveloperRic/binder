@@ -6,8 +6,9 @@ const udb = require("./app.server.user");
 
 exports.sources = [
   new Source("gdrive", "Google Drive"),
-  new Source("onedrive", "Onedrive")
+  new Source("onedrive", "Onedrive"),
   //new Source("onedrive365", "Office 365")
+  new Source("dropbox", "Dropbox")
 ];
 
 exports.getSource = function(sourceId) {
@@ -182,6 +183,46 @@ exports.updateFileMetadata = function(
   gdrive.updateFileMetadata(uid, fileId, metadata, onSuccess, onFail);
 };
 
-exports.extendGDriveScope = function(uid, onComplete) {
-  gdrive.extendScope(uid, onComplete);
+exports.search = function(uid, sourceId, query, params, onSuccess, onFail) {
+  var allFiles = [];
+  switch (sourceId) {
+    case "gdrive":
+      delete params.orderBy;
+      gdrive.listFiles(
+        uid,
+        "root",
+        Object.assign(params, { q: "fullText contains '" + query + "'" }),
+        ({ data }) => {
+          data.files.forEach(file => {
+            allFiles.push({ source: "gdrive", dat: file });
+          });
+          onSuccess(allFiles);
+        },
+        onFail
+      );
+      break;
+
+    case "onedrive":
+      onedrive.search(
+        uid,
+        query,
+        params,
+        data => {
+          data.value.forEach(file => {
+            allFiles.push({ source: "onedrive", dat: file });
+          });
+          onSuccess(allFiles);
+        },
+        onFail
+      );
+      break;
+
+    default:
+      onFail({
+        errors: [
+          { code: 400, message: "Sourceid (" + sourceId + ") is invalid" }
+        ]
+      });
+      return;
+  }
 };

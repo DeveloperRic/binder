@@ -154,8 +154,7 @@ exports.getNavigation = function(uid) {
   var user = this.getUserWithUID(uid);
   if (user.connectedSources.length > 0) {
     nav.push({
-      source: "all",
-      folder: "root",
+      page: "dashboard",
       text: "Home"
     });
   }
@@ -184,8 +183,8 @@ function newUserObject(uid, email, password, connectedSources, accessLevel) {
     connectedSources: connectedSources,
     accessLevel: accessLevel,
     profile: {
-      firstname: "Unnamed",
-      lastname: "user",
+      firstname: "User",
+      lastname: "",
       avatar: null
     }
   };

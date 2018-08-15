@@ -1,0 +1,124 @@
+<div id="filesStage" class="stage">
+  <div class="main-pane" ng-click="onMainPaneClick()">
+    <div class="labelStrip">
+      <div class="label">
+        <div class="label-text">
+          <div class="pages">
+            <a class="page" ng-click="openFolder('all', 'root')">Files</a>
+            <a class="page" ng-repeat="page in pageStack" ng-click="onFileClick(page)"> / {{page.dat.name}}</a>
+          </div>
+          <div class="invisible label-floor"></div>
+        </div>
+        <img class="currentFolderSource" ng-if="currentFolderSource=='gdrive'" src="../css/img/gdrive_lockup.png">
+        <img class="currentFolderSource" ng-if="currentFolderSource=='onedrive'" src="../css/img/onedrive_lockup.png">
+      </div>
+      <div class="sorting label" ng-if="currentFolderSource && currentFolder">
+        <div class="label-text inline">
+          Order by
+          <div class="sort-criteria" ng-click="sorting.toggleDrawer($event)">
+            <div class="inline">
+              <span class="criteria" ng-repeat="criteria in sorting.orderBy">
+                <span ng-if="!$first">, </span>
+                {{criteria.text}}
+              </span>
+              <span class="text-color-muted" ng-if="sorting.orderBy.length == 0">&lt; no order &gt;</span>
+              <span class="criteria" ng-if="!sorting.drawerOpen">▼</span>
+              <span class="criteria" ng-if="sorting.drawerOpen">▲</span>
+            </div>
+            <div class="label-floor"></div>
+          </div>
+        </div>
+        <div class="sort-list background-secondary drop-shadow" ng-if="sorting.drawerOpen">
+          <div class="criteria" ng-repeat="criteria in sorting.availableMethods" ng-if="currentFolderSource == 'all' || criteria['all'] || criteria[currentFolderSource]"
+            ng-click="sorting.onCriteriaClick(criteria)">
+            <div class="criteria-rank background-primary" ng-if="criteria.enabled">
+              <div class="criteria-rank-item">{{sorting.orderBy.indexOf(criteria) + 1}}</div>
+              <div class="criteria-rank-item" ng-if="criteria.descending">↧</div>
+              <div class="criteria-rank-item" ng-if="!criteria.descending">↥</div>
+            </div>
+            {{criteria.text}}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="status-box" ng-if="requestStatus.loadingChildren">
+      <i class="status-box-loading material-icons">autorenew</i>
+      <h1>Loading files....</h1>
+    </div>
+    <div class="status-box" ng-if="requestStatus.searching">
+      <i class="status-box-loading material-icons">autorenew</i>
+      <h1>Searching....</h1>
+    </div>
+    <div class="status-box" ng-if="!requestStatus.loadingChildren && requestStatus.errorLoading">
+      <i class="material-icons">error_outline</i>
+      <h1>Couldn't load your files</h1>
+      <h3>If this error persits, try reconnecting your sources to your account.</h3>
+      <h3>For more help contact support.</h3>
+    </div>
+    <div class="status-box" ng-if="!requestStatus.loadingChildren && !requestStatus.searching && !requestStatus.errorLoading && files.length == 0">
+      <i class="material-icons">inbox</i>
+      <h1>No files found</h1>
+    </div>
+    <div class="file-tray" ng-if="!requestStatus.loadingChildren && !requestStatus.errorLoading && source.length != 0">
+      <div class="tile background-secondary" ng-repeat="file in files" ng-class="{'drop-shadow': file.isFolder, 'drop-shadow-light': !file.isFolder}"
+        ng-click="onFileClick(file)" context-menu="fileContextMenu(file)">
+        <div class="tile-img" ng-if="!file.isFolder && file.thumbnailLink">
+          <img ng-src="{{file.thumbnailLink}}" />
+        </div>
+        <div class="tile-content" ng-class="{'tile-content-folder': file.isFolder}">
+          <div class="tile-content-folder-box" ng-if="file.isFolder">
+            <i class="material-icons">folder</i>
+          </div>
+          <div class="tile-content-box">
+            <div class="tile-icon" ng-if="!file.isFolder">
+              <img ng-if="!file.isFolder" src="{{file.dat.iconLink}}" />
+            </div>
+            <div class="tile-text">{{file.dat.name}}</div>
+          </div>
+        </div>
+        <div class="tile-bottom">
+          <img src="../css/img/gdrive_icon_small_20.png" ng-if="file.source=='gdrive'">
+          <img src="../css/img/onedrive_lockup.png" ng-if="file.source=='onedrive'">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="fileDetailsPane" class="ng-hide">
+    <div class="file-thumbnail background-secondary-light">
+      <div class="file-thumbnail-text" ng-if="detailsFile.source == 'gdrive' && user.accessLevel == 0">
+        <span class="text-muted">File thumbnails require extended permissions</span>
+        <br/>
+        <a class="file-thumbnail-text-link text-color-accent" href="/account#accessLevels">Click here to give Binder more access</a>
+      </div>
+      <div class="file-thumbnail-text" ng-if="user.accessLevel != 0 && !detailsFile.thumbnailLink">
+        <span class="text-muted">This file doesn't have a thumbnail associated.</span>
+      </div>
+      <img ng-src="{{detailsFile.thumbnailLink}}" alt="{{detailsFile.thumbnailLinkAlt}}" ng-if="detailsFile.thumbnailLink" />
+    </div>
+    <div class="file-info">
+      <div>
+        <div class="file-info-head">
+          <span class="file-info-title" ng-click="openFile(detailsFile, true)">{{detailsFile.dat.name}}</span>
+          <div class="file-info-starred" ng-click="toggleFileStarred(detailsFile)" ng-if="detailsFile.source=='gdrive'">
+            <i class="material-icons" ng-show="detailsFile.dat.starred" ng-click="toggleStarred(false)">star</i>
+            <i class="material-icons" ng-show="!detailsFile.dat.starred" ng-click="toggleStarred(true)">star_border</i>
+          </div>
+        </div>
+        <h4>{{detailsFile.dat.description}}</h4>
+        <span class="version text-muted" ng-show="detailsFile.versionNumber && detailsFile.dat.version != 0">Version: {{detailsFile.versionNumber}}</span>
+      </div>
+      <div class="file-info-audio" ng-if="detailsFile.dat.audio">
+        <audio id="fileInfoAudio" preload="none" controls>
+          <source data-ng-src="{{detailsFile.streamURL}}">
+        </audio>
+      </div>
+      <div class="file-info-properties">
+        Size: {{formatFileSize(detailsFile.dat.size)}}
+        <div class="modified" ng-show="detailsFile.versionNumber">
+          <span class="modified-time">Modified: {{formatFileModifiedTime(detailsFile.lastModified)}}</span>
+          <span class="modified-by text-muted"> by: {{detailsFile.lastModifiedBy}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -6,7 +6,7 @@ const fs = require("fs");
 const udb = require("./node/app.server.user");
 const sdb = require("./node/app.server.source");
 const onedrive = require("./node/app.server.source.onedrive");
-// const email = require("./node/app.server.email");
+const email = require("./node/app.server.email");
 
 var app = express();
 
@@ -189,7 +189,7 @@ app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
 });
 
 app.route("/api/source/:sourceId/disconnect").post((req, res) => {
-  if (!verifyParams(req.params.sourceId,req.body.uid)) {
+  if (!verifyParams(req.params.sourceId, req.body.uid)) {
     res.sendStatus(400);
     return;
   }
@@ -215,7 +215,14 @@ app.route("/api/source/:sourceId/disconnect").post((req, res) => {
 });
 
 app.route("/api/source/:sourceId/:folderId/children").get((req, res) => {
-  if (!verifyParams(req.query.uid, req.params.sourceId, req.params.folderId, req.query.params)) {
+  if (
+    !verifyParams(
+      req.query.uid,
+      req.params.sourceId,
+      req.params.folderId,
+      req.query.params
+    )
+  ) {
     res.sendStatus(400);
     return;
   }
@@ -232,7 +239,14 @@ app.route("/api/source/:sourceId/:folderId/children").get((req, res) => {
 });
 
 app.route("/api/source/:sourceId/:fileId/getfilemetadata").get((req, res) => {
-  if (!verifyParams(req.query.uid, req.params.sourceId, req.params.fileId, req.query.keys)) {
+  if (
+    !verifyParams(
+      req.query.uid,
+      req.params.sourceId,
+      req.params.fileId,
+      req.query.keys
+    )
+  ) {
     res.sendStatus(400);
     return;
   }
@@ -265,8 +279,32 @@ app.route("/api/source/updatefilemetadata").post((req, res) => {
   );
 });
 
-app.route("/api/source/onedrive/:fileId/getfilecollection").get((req, res) => {
-  if (!verifyParams(req.query.uid, req.params.fileId, req.query.collection)) {
+app.route("/api/source/:sourceId/search").get((req, res) => {
+  if (
+    !verifyParams(
+      req.query.uid,
+      req.params.sourceId,
+      req.query.query,
+      req.query.params
+    )
+  ) {
+    res.sendStatus(400);
+    return;
+  }
+  sdb.search(
+    req.query.uid,
+    req.params.sourceId,
+    req.query.query,
+    req.query.params,
+    files => {
+      res.status(200).send(files);
+    },
+    error => handleError(res, error)
+  );
+});
+
+app.route("/api/source/onedrive/:fileId/collection/:collection").get((req, res) => {
+  if (!verifyParams(req.query.uid, req.params.fileId, req.params.collection)) {
     res.sendStatus(400);
     return;
   }
@@ -274,7 +312,7 @@ app.route("/api/source/onedrive/:fileId/getfilecollection").get((req, res) => {
   onedrive.getFileCollection(
     req.query.uid,
     req.params.fileId,
-    req.query.collection,
+    req.params.collection,
     file => {
       res.status(200).send(file);
     },
@@ -295,16 +333,6 @@ app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
     },
     error => handleError(res, error)
   );
-});
-
-app.route("/api/email/:templateId").get((req, res) => {
-  if (!verifyParams(req.params.templateId)) {
-    res.sendStatus(400);
-    return;
-  }
-  res.sendFile("app.email." + req.params.templateId + ".html", {
-    root: "./html"
-  });
 });
 
 app.route("/api/email/:templateId/send").post((req, res) => {
@@ -328,6 +356,16 @@ app.route("/api/email/:templateId/send").post((req, res) => {
   res.sendStatus(200);
 });
 
+app.route("/email/:templateId").get((req, res) => {
+  if (!verifyParams(req.params.templateId, req.query.uid)) {
+    res.sendStatus(400);
+    return;
+  }
+  email.viewOnline(req.params.templateId, req.query.uid, content => {
+    res.send(content);
+  });
+});
+
 app.route("/app.client.*").get((req, res) => {
   res.sendFile(req.path.substr(1), { root: "./html" });
 });
@@ -339,18 +377,19 @@ app.route("/connect/*").get((req, res) => {
 });
 
 app.route("/*").get((req, res) => {
-  fs.exists(
-    "./html/app.client.stage." + req.path.substr(1) + ".html",
-    exists => {
-      if (exists) {
-        res.sendFile("app.client.router.html", {
-          root: "./html"
-        });
-      } else {
-        res.sendFile("app.client.landing.html", { root: "./html" });
-      }
+  var path = req.path.substr(1);
+  if (path.includes("/")) {
+    path = path.substr(0, path.indexOf("/"));
+  }
+  fs.exists("./html/app.client.stage." + path + ".html", exists => {
+    if (exists) {
+      res.sendFile("app.client.router.html", {
+        root: "./html"
+      });
+    } else {
+      res.sendFile("app.client.landing.html", { root: "./html" });
     }
-  );
+  });
 });
 
 app.use(function(err, req, res, next) {

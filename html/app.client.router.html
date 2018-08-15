@@ -28,8 +28,15 @@
 		<div class="nav-title text-color-primary">Binder</div>
 		<div class="divider"></div>
 		<div class="nav-buttons">
+			<div class="nav-button nav-search" ng-if="searching">
+				<form ng-submit="searching.search(searching.searchQuery)">
+					<input type="text" placeholder="Search" ng-model="searching.searchQuery" />
+				</form>
+				<i class="material-icons" ng-click="searching.search(searching.searchQuery)">search</i>
+			</div>
 			<div class="nav-button background-accent-light" ng-repeat="item in navButtons">
-				<a ng-href="dashboard?sourceId={{item.source}}&folderId={{item.folder}}">{{item.text}}</a>
+				<a ng-if="item.folder" ng-href="/files?sourceId={{item.source}}&folderId={{item.folder}}">{{item.text}}</a>
+				<a ng-if="item.page" ng-href="/{{item.page}}">{{item.text}}</a>
 			</div>
 		</div>
 		<div class="divider"></div>

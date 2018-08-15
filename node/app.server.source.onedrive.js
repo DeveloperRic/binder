@@ -27,7 +27,7 @@ exports.init = function() {
         if (err.code == "ENOENT") {
           return console.log("Couldn't find onedrive client secret!");
         } else {
-          return console.log("Error loading client secret file: ", err);
+          return console.log("Error loading onedrive client secret file: ", err);
         }
       }
       app_secret = JSON.parse(content);
@@ -110,10 +110,10 @@ exports.beginAuthorize = function(
       "?client_id=" +
       app_secret.client_id +
       "&response_type=code" +
-      "&redirect_uri=" +
-      encodeURIComponent("https://binder-211420.appspot.com/connect/onedrive") +
       // "&redirect_uri=" +
-      // encodeURIComponent("http://localhost:8080/connect/onedrive") +
+      // encodeURIComponent("https://binder-211420.appspot.com/connect/onedrive") +
+      "&redirect_uri=" +
+      encodeURIComponent("http://localhost:8080/connect/onedrive") +
       "&scope=" +
       encodeURIComponent(
         "offline_access " + SCOPE_LEVELS[udb.getUserWithUID(uid).accessLevel]
@@ -236,9 +236,34 @@ exports.getFileContent = function(uid, fileId, onSuccess, onFail) {
   sendRequest(uid, "/me/drive/items/" + fileId + "/content", onSuccess, onFail);
 };
 
+exports.search = function(uid, query, params, onSuccess, onFail) {
+  var requestUrl = "/me/drive/root/search(q='" + query + "')";
+  requestUrl += "?select=id,name,folder,webUrl,size,searchResult&top=28";
+  if (params) {
+    requestUrl +=
+      "&" +
+      Object.keys(params)
+        .map(function(key) {
+          return key.toLowerCase() + "=" + encodeURIComponent(params[key]);
+        })
+        .join("&");
+  }
+  sendRequest(uid, requestUrl, onSuccess, onFail);
+};
+
 function sendRequest(uid, requestUrl, onSuccess, onFail, refreshed) {
   var userToken = getUserToken(uid);
   // check user token is still valid
+  if (userToken == null) {
+    return onFail({
+      errors: [
+        {
+          code: 403,
+          message: "The user doesn't have onedrive access token!"
+        }
+      ]
+    });
+  }
   if (new Date().getTime() >= userToken.expires) {
     if (!refreshed) {
       refreshAccessToken(

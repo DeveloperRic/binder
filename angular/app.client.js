@@ -31,6 +31,14 @@ client.config(function($locationProvider, $routeProvider) {
       templateUrl: "app.client.stage.dashboard.html",
       controller: "dashboardCtrl"
     })
+    .when("/files", {
+      templateUrl: "app.client.stage.files.html",
+      controller: "filesCtrl"
+    })
+    .when("/files/search", {
+      templateUrl: "app.client.stage.files.html",
+      controller: "filesCtrl"
+    })
     .when("/account", {
       templateUrl: "app.client.stage.account.html",
       controller: "accountCtrl"
@@ -47,25 +55,6 @@ client.run(function(
   $window,
   $httpParamSerializer
 ) {
-  $rootScope.staticNavButtons = [
-    {
-      url: "connect/onedrive",
-      text: "Onedrive callback"
-    },
-    {
-      url: "connect?forceUpdate=true",
-      text: "Back to connect"
-    },
-    {
-      url:
-        "/connect?" +
-        $httpParamSerializer({
-          forceUpdate: true,
-          updateSources: ["onedrive"]
-        }),
-      text: "Connect onedrive"
-    }
-  ];
   $rootScope.userSessionExpiration = function() {
     var expiration = new Date();
     expiration.setTime(
@@ -136,7 +125,8 @@ client.run(function(
   $rootScope.sources = function(onSuccess, onFail) {
     $.get("api/source/list", {})
       .done(function(data) {
-        $rootScope.tempSourceList = data;
+        $rootScope.tempSourceList.length = 0;
+        data.forEach(source => $rootScope.tempSourceList.push(source));
         onSuccess($rootScope.tempSourceList);
       })
       .fail(function(xhr, status, error) {
@@ -385,11 +375,14 @@ client.controller("connectCtrl", function(
   };
   $rootScope.beginExternalConnect = $scope.onSelect;
   $scope.onRedirect = () => {
-    if ($scope.selected.id != "onedrive") {
+    if ($scope.selected.id == "gdrive") {
       $window.open($scope.redirectURL);
       $scope.responseReady = true;
     } else {
-      $cookies.put("app.client.data.callback", "/connect?forceUpdate=true");
+      $cookies.put(
+        "app.client.data.onedrive.callback",
+        "/connect?forceUpdate=true"
+      );
       $window.open($scope.redirectURL, "_self");
     }
   };
@@ -477,9 +470,9 @@ client.controller("connectOnedriveCtrl", function(
   );
 
   $scope.onSuccess = function() {
-    var callback = $cookies.get("app.client.data.callback");
+    var callback = $cookies.get("app.client.data.onedrive.callback");
     if (callback) {
-      $cookies.remove("app.client.data.callback");
+      $cookies.remove("app.client.data.onedrive.callback");
       $location.url(callback);
     } else {
       $location.url("/connect?" + $httpParamSerializer({ forceUpdate: true }));
@@ -498,10 +491,77 @@ client.controller("connectOnedriveCtrl", function(
 client.controller("dashboardCtrl", function(
   $scope,
   $rootScope,
+  $location,
+  $httpParamSerializer
+) {
+  $scope.requestStatus = {
+    loadingSources: true,
+    errorLoading: false,
+    setStatus: function(status) {
+      for (let key in $scope.requestStatus) {
+        if (key != "setStatus") {
+          $scope.requestStatus[key] = key == status;
+        }
+      }
+    }
+  };
+  $rootScope.user(
+    user => {
+      $scope.user = user;
+      $.get("api/user/" + user.uid + "/navigation").done(navigation => {
+        $rootScope.navButtons = navigation;
+        $scope.$apply();
+      });
+
+      $rootScope.sources(
+        sources => {
+          $scope.sources = sources;
+          $scope.styles = {};
+          sources.forEach(source => {
+            $scope.styles[source.id] = {
+              "background-color": "initial"
+            };
+            switch (source.id) {
+              case "gdrive":
+                $scope.styles[source.id]["background-color"] = "#34A853";
+                break;
+              case "onedrive":
+                $scope.styles[source.id]["background-color"] = "#094AB2";
+                break;
+              case "dropbox":
+                $scope.styles[source.id]["background-color"] = "#0061FF";
+                break;
+            }
+          });
+          $scope.requestStatus.setStatus("");
+          $scope.$apply();
+        },
+        () => {
+          // TODO: message on sources load failure.
+          $scope.requestStatus.setStatus("errorLoading");
+          console.log("Failed to get source list");
+          $scope.$apply();
+        }
+      );
+    },
+    () => {
+      $location.url(
+        "/login?" + $httpParamSerializer({ callback: $location.url() })
+      );
+      $location.replace();
+    }
+  );
+});
+
+client.controller("filesCtrl", function(
+  $scope,
+  $rootScope,
   $routeParams,
   $location,
   $window,
-  $httpParamSerializer
+  $httpParamSerializer,
+  $interval,
+  $cookies
 ) {
   $scope.pageStack = [];
   $scope.sorting = {
@@ -539,6 +599,7 @@ client.controller("dashboardCtrl", function(
       }
     ],
     orderBy: [],
+    criteriaClickCallback: () => {},
     orderByStr: function(sourceId) {
       var realOrderBy = [];
       $scope.sorting.orderBy.forEach(method => {
@@ -569,30 +630,34 @@ client.controller("dashboardCtrl", function(
           $scope.sorting.toggleCriteria(criteria);
         }
         criteria.descending = !criteria.descending;
+        $scope.sorting.updateSortCookie();
       } else {
         $scope.sorting.toggleCriteria(criteria);
       }
-      $scope.openFolder($scope.currentFolderSource, $scope.currentFolder, true);
+      $scope.sorting.criteriaClickCallback();
     },
-    sortFiles: function() {
-      var files = [];
-      var tempFiles = [];
-      $scope.files.forEach(file => {
-        if (file.isFolder) {
-          files.push(file);
-        } else {
-          tempFiles.push(file);
-        }
+    updateSortCookie: function() {
+      var sortOrderCookie = [];
+      $scope.sorting.orderBy.forEach(method => {
+        sortOrderCookie.push({
+          text: method.text,
+          descending: method.descending
+        });
       });
-      tempFiles.forEach(file => files.push(file));
-      // ^^^ fix this redundancy!
-      $scope.files.length = 0;
-      files.forEach(file => $scope.files.push(file));
+      $cookies.putObject("app.client.data.files.orderBy", sortOrderCookie);
     }
   };
   $scope.requestStatus = {
     loadingChildren: true,
-    errorLoading: false
+    errorLoading: false,
+    searching: false,
+    setStatus: function(status) {
+      for (let key in $scope.requestStatus) {
+        if (key != "setStatus") {
+          $scope.requestStatus[key] = key == status;
+        }
+      }
+    }
   };
   $scope.files = [];
   $scope.currentFolderSource = "all";
@@ -647,6 +712,7 @@ client.controller("dashboardCtrl", function(
     });
   };
   $scope.openFolder = function(sourceId, folderId, replace) {
+    $scope.requestStatus.setStatus("loadingChildren");
     if (sourceId == "all") {
       $rootScope.sources(
         sources => {
@@ -657,15 +723,19 @@ client.controller("dashboardCtrl", function(
             }
           });
           $scope.currentFolderSource = "all";
+          $location.search("sourceId", null);
+          $location.search("folderId", null);
+          $scope.$apply();
         },
         () => {
           // TODO: message on sources load failure.
+          $scope.requestStatus.setStatus("errorLoading");
+          console.log("Failed to get source list");
+          $scope.$apply();
         }
       );
       return;
     }
-    $scope.requestStatus.loadingChildren = true;
-    $scope.requestStatus.errorLoading = false;
     $scope.currentFolder = folderId;
     $scope.currentFolderSource = sourceId;
     if (folderId != "root") {
@@ -674,9 +744,6 @@ client.controller("dashboardCtrl", function(
         sourceId: sourceId,
         folderId: folderId
       });
-    } else {
-      $location.search("sourceId", null);
-      $location.search("folderId", null);
     }
     if (replace) {
       $location.replace();
@@ -688,18 +755,84 @@ client.controller("dashboardCtrl", function(
       }
     })
       .done(function(list) {
-        // TODO show a label when no files are returned (i.e. empty folder)
+        var folderIndex = $scope.files.length;
         list.forEach(file => {
-          $scope.files.push($scope.unifySourceFile(file.source, file.dat));
+          var fileWrapper = $scope.unifySourceFile(file.source, file.dat);
+          if (sourceId == "gdrive") {
+            $scope.files.push(fileWrapper);
+          } else if (sourceId == "onedrive") {
+            if (fileWrapper.isFolder) {
+              $scope.files.splice(folderIndex, 0, fileWrapper);
+              folderIndex++;
+            } else {
+              $scope.files.push(fileWrapper);
+            }
+          }
         });
-        $scope.sorting.sortFiles();
-        $scope.requestStatus.loadingChildren = false;
-        $scope.requestStatus.errorLoading = false;
+        $scope.sorting.criteriaClickCallback = () => {
+          $scope.openFolder(
+            $scope.currentFolderSource,
+            $scope.currentFolder,
+            true
+          );
+        };
+        $scope.requestStatus.setStatus("");
         $scope.$apply();
+        var index = -1;
+        $scope.files.forEach(file => {
+          index++;
+          if (file.source == "gdrive") {
+            $interval(
+              () => {
+                $.get("api/source/gdrive/" + file.dat.id + "/getfilemetadata", {
+                  uid: $rootScope.user().uid,
+                  keys: ["thumbnailLink"]
+                })
+                  .done(function(data) {
+                    file.dat = Object.assign(file.dat, data);
+                    file = Object.assign(file, {
+                      thumbnailLink: data.thumbnailLink
+                    });
+                    $scope.$apply();
+                  })
+                  .fail(function(xhr, status, error) {
+                    file.thumbnailLinkAlt = "Couldn't get file metadata";
+                    console.log(JSON.parse(xhr.responseText));
+                  });
+              },
+              150 * (index + 1),
+              1
+            );
+          } else if (file.source == "onedrive") {
+            $.get(
+              "api/source/onedrive/" + file.dat.id + "/collection/thumbnails",
+              {
+                uid: $rootScope.user().uid
+              }
+            )
+              .done(function(data) {
+                file.dat = Object.assign(file.dat, {
+                  thumbnails: data.value
+                });
+                // add another switch if a different source also separates collection calls
+                if (data.value) {
+                  try {
+                    file = Object.assign(file, {
+                      thumbnailLink: data.value[0].large.url
+                    });
+                    $scope.$apply();
+                  } catch (error) {}
+                }
+              })
+              .fail(function(xhr, status, error) {
+                file.thumbnailLinkAlt = "Couldn't get file thumbnail";
+                console.log(JSON.parse(xhr.responseText));
+              });
+          }
+        });
       })
       .fail(function(xhr, status, error) {
-        $scope.requestStatus.loadingChildren = false;
-        $scope.requestStatus.errorLoading = true;
+        $scope.requestStatus.setStatus("errorLoading");
         $scope.$apply();
         console.log(xhr.responseText);
       });
@@ -731,11 +864,65 @@ client.controller("dashboardCtrl", function(
       });
     }
   };
+  $rootScope.searching = {
+    searchQuery: "",
+    search: function(query) {
+      if ($location.path() != "/files/search") {
+        $location.path("/files/search").search({ q: query });
+        return;
+      } else {
+        $location.search({ q: query });
+      }
+      $rootScope.searching.searchQuery = query;
+      $scope.requestStatus.setStatus("searching");
+      $rootScope.sources(
+        sources => {
+          $scope.files.length = 0;
+          sources.forEach(source => {
+            if ($scope.user.connectedSources.includes(source.id)) {
+              $.get("api/source/" + source.id + "/search", {
+                uid: $rootScope.user().uid,
+                query: query,
+                params: {
+                  orderBy: $scope.sorting.orderByStr(source.id)
+                }
+              })
+                .done(function(list) {
+                  list.forEach(file => {
+                    $scope.files.push(
+                      $scope.unifySourceFile(file.source, file.dat)
+                    );
+                  });
+                  $scope.sorting.criteriaClickCallback = () => {
+                    $rootScope.searching.search(
+                      $rootScope.searching.searchQuery
+                    );
+                  };
+                  $scope.requestStatus.setStatus("");
+                  $scope.$apply();
+                })
+                .fail(function(xhr, status, error) {
+                  $scope.requestStatus.setStatus("errorLoading");
+                  $scope.$apply();
+                  console.log(xhr.responseText);
+                });
+            }
+          });
+        },
+        () => {
+          // TODO: message on sources load failure.
+          $scope.requestStatus.setStatus("errorLoading");
+          console.log("Failed to get source list");
+          $scope.$apply();
+        }
+      );
+    }
+  };
 
   $rootScope.user(
     user => {
       if (user.connectedSources.length == 0) {
-        $location.url("/connect");
+        $location.url("/dashboard");
         $location.replace();
       }
       $scope.user = user;
@@ -743,6 +930,18 @@ client.controller("dashboardCtrl", function(
         $rootScope.navButtons = navigation;
         $scope.$apply();
       });
+      var sortOrder = $cookies.getObject("app.client.data.files.orderBy");
+      if (sortOrder) {
+        sortOrder.forEach(method => {
+          for (let i in $scope.sorting.availableMethods) {
+            if ($scope.sorting.availableMethods[i].text == method.text) {
+              $scope.sorting.availableMethods[i].enabled = true;
+              $scope.sorting.availableMethods[i].descending = method.descending;
+              break;
+            }
+          }
+        });
+      }
       $scope.sorting.availableMethods.forEach(method => {
         if (method.enabled) {
           $scope.sorting.orderBy.push(method);
@@ -750,6 +949,8 @@ client.controller("dashboardCtrl", function(
       });
       if ($routeParams.folderId) {
         $scope.openFolder($routeParams.sourceId, $routeParams.folderId, true);
+      } else if ($location.path() == "/files/search") {
+        $rootScope.searching.search($routeParams.q);
       } else {
         $scope.openFolder("all", "root");
       }
@@ -840,7 +1041,6 @@ client.controller("dashboardCtrl", function(
     switch (detailsFile.source) {
       case "gdrive":
         keys.push(
-          "thumbnailLink",
           "starred",
           "version",
           "modifiedTime",
@@ -850,7 +1050,7 @@ client.controller("dashboardCtrl", function(
         break;
       case "onedrive":
         keys.push("malware", "audio", "@microsoft.graph.downloadUrl");
-        collections.push("thumbnails", "versions");
+        collections.push("versions");
         break;
     }
     $.get(
@@ -869,7 +1069,6 @@ client.controller("dashboardCtrl", function(
         switch (detailsFile.source) {
           case "gdrive":
             $scope.detailsFile = Object.assign($scope.detailsFile, {
-              thumbnailLink: data.thumbnailLink,
               versionNumber: data.version,
               lastModified: data.modifiedTime,
               lastModifiedBy: data.lastModifyingUser.displayName,
@@ -889,21 +1088,19 @@ client.controller("dashboardCtrl", function(
         $scope.$apply();
       })
       .fail(function(xhr, status, error) {
-        $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file metadata.";
+        $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file metadata";
         console.log(JSON.parse(xhr.responseText));
       });
 
     if (detailsFile.source == "onedrive") {
       collections.forEach(collection => {
         $.get(
-          "api/source/" +
-            detailsFile.source +
-            "/" +
+          "api/source/onedrive/" +
             detailsFile.dat.id +
-            "/getfilecollection",
+            "/collection/" +
+            collection,
           {
-            uid: $rootScope.user().uid,
-            collection: collection
+            uid: $rootScope.user().uid
           }
         )
           .done(function(data) {
@@ -916,11 +1113,7 @@ client.controller("dashboardCtrl", function(
             // add another switch if a different source also separates collection calls
             if (data.value) {
               try {
-                if (collection == "thumbnails") {
-                  $scope.detailsFile = Object.assign($scope.detailsFile, {
-                    thumbnailLink: data.value[0].large.url
-                  });
-                } else if (collection == "versions") {
+                if (collection == "versions") {
                   $scope.detailsFile = Object.assign($scope.detailsFile, {
                     versionNumber: data.value.length,
                     lastModified: data.value[0].lastModifiedDateTime,
@@ -933,7 +1126,7 @@ client.controller("dashboardCtrl", function(
             $scope.$apply();
           })
           .fail(function(xhr, status, error) {
-            $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file metadata.";
+            $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file metadata";
             console.log(JSON.parse(xhr.responseText));
           });
       });
@@ -1073,7 +1266,10 @@ client.controller("accountCtrl", function(
                 );
                 $location.replace();
               } else {
-                $cookies.put("app.client.data.callback", $location.url());
+                $cookies.put(
+                  "app.client.data.onedrive.callback",
+                  $location.url()
+                );
                 $window.open(response.data, "_self");
               }
             } else {

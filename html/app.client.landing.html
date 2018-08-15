@@ -1,4 +1,4 @@
-<html ng-app="landing">
+<html ng-app="landing" ng-controller="landingCtrl">
 
 <head>
   <base href="/">
@@ -33,9 +33,8 @@
     </nav>
     <div class="header-title">
       <div>
-        Ever wanted to manage all your online files
-        <span class="focus">at the same time</span>?
-        <br/> Binder is for you!
+        {{headlines[headlineIndex][0]}}
+        <span class="focus">{{headlines[headlineIndex][1]}}</span>{{headlines[headlineIndex][2]}}
       </div>
     </div>
     <a href="#intro" class="header-subtitle">
@@ -53,16 +52,18 @@
           <span class="binder-logo">Binder</span>
           <div class="source-box">
             <img class="source-graphic" src="../css/img/dropbox_lockup.png">
-            <img class="source-graphic" src="../css/img/google_drive_lockup.png">
+            <img class="source-graphic" src="../css/img/gdrive_lockup.png">
             <img class="source-graphic" src="../css/img/onedrive_lockup.png">
           </div>
         </div>
       </div>
       <div class="desc col-md-7">
-        <p>Each online service has its benefits, but none of them can provide a cross-service interface.</p>
-        <p>That's where Binder comes in. Binder is able to
-          <b>simultaneously query all your registered services</b> so you don't have to fuss around with multiple tabs and/or
-          windows.
+        <p>Each online service will boast of their benefits, but none of them can provide you a place to manage and organise
+          all your files, regardless of where they're coming from.</p>
+        <br/>
+        <p>Binder creates
+          <b>a single unified portal to all your files from all your registered services</b> so you don't have to fuss around
+          with multiple tabs or windows.
         </p>
       </div>
     </div>

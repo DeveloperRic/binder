@@ -6,7 +6,7 @@
     <h3 class="section-title">Sources</h3>
     Click on a source to connect or disconnect it.
     <div class="bubbles">
-      <div class="bubble" ng-repeat="source in sources" ng-class="{'bubble-negative': !sourceConnectedWrapper[source.id]}" ng-click="toggleSource(source)">
+      <div class="bubble" ng-repeat="source in sources" ng-class="{'bubble-negative': !sourceConnectedWrapper[source.id]}" ng-click="toggleSource(source)" ng-if="source.id != 'dropbox'">
         {{source.name}}
         <span class="status">{{sourceConnectedWrapper[source.id] ? 'Connected' : 'Disconnected'}}</span>
       </div>
@@ -87,17 +87,17 @@
       </table>
     </form>
   </section>
-  <section class="container">
+  <section id="accessLevels" class="container">
     <h3 class="section-title important-title">Access Levels</h3>
     <p>You are able to choose how much data Binder can access from your accounts.</p>
     <p class="important-title">WARNING! Changing access levels will disconnect all sources from your account! You will have to re-connect them manually.</p>
     <div class="bubbles">
-      <div class="bubble" ng-class="{'bubble-negative': user.accessLevel != 0}" ng-click="setAccessLevel(0)">
+      <div class="bubble" ng-class="{'bubble-fail': user.accessLevel != 0}" ng-click="setAccessLevel(0)">
         Read only access
         <span class="status">Limited capabilities</span>
         <span class="status" ng-if="user.accessLevel == 0">(Selected)</span>
       </div>
-      <div class="bubble" ng-class="{'bubble-negative': user.accessLevel != 1}" ng-click="setAccessLevel(1)">
+      <div class="bubble" ng-class="{'bubble-fail': user.accessLevel != 1}" ng-click="setAccessLevel(1)">
         Read/Write access
         <span class="status">Everything enabled</span>
         <span class="status" ng-if="user.accessLevel == 1">(Selected)</span>
