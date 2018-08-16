@@ -27,7 +27,10 @@ exports.init = function() {
         if (err.code == "ENOENT") {
           return console.log("Couldn't find onedrive client secret!");
         } else {
-          return console.log("Error loading onedrive client secret file: ", err);
+          return console.log(
+            "Error loading onedrive client secret file: ",
+            err
+          );
         }
       }
       app_secret = JSON.parse(content);
@@ -58,7 +61,8 @@ function setUserToken(uid, token) {
   var userToken = getUserToken(uid);
   var expiry = new Date();
   if (token != null) {
-    expiry.setTime(expiry.getTime() + (token.expires_in - 10) * 1000);
+    // expiry.setTime(expiry.getTime() + (token.expires_in - 10) * 1000);
+    expiry.setTime(expiry.getTime() + 1000);
   }
   var newToken = { uid: uid, token: token, expires: expiry.getTime() };
   if (userToken == null && token != null) {
@@ -105,20 +109,48 @@ exports.beginAuthorize = function(
       refreshAccessToken(uid, onSuccess, onFail);
     }
   } else {
-    var url =
-      "https://login.microsoftonline.com/common/oauth2/v2.0/authorize" +
-      "?client_id=" +
-      app_secret.client_id +
-      "&response_type=code" +
-      "&redirect_uri=" +
-      encodeURIComponent("https://binder-211420.appspot.com/connect/onedrive") +
-      // "&redirect_uri=" +
-      // encodeURIComponent("http://localhost:8080/connect/onedrive") +
-      "&scope=" +
-      encodeURIComponent(
-        "offline_access " + SCOPE_LEVELS[udb.getUserWithUID(uid).accessLevel]
-      );
-    onPrompt(url);
+    udb.getUserWithUID(
+      uid,
+      user => {
+        var url =
+          "https://login.microsoftonline.com/common/oauth2/v2.0/authorize" +
+          "?client_id=" +
+          app_secret.client_id +
+          "&response_type=code" +
+          "&redirect_uri=" +
+          encodeURIComponent(
+            "https://binder-211420.appspot.com/connect/onedrive"
+          ) +
+          // "&redirect_uri=" +
+          // encodeURIComponent("http://localhost:8080/connect/onedrive") +
+          "&scope=" +
+          encodeURIComponent(
+            "offline_access " + SCOPE_LEVELS[user.accessLevel]
+          );
+        onPrompt(url);
+      },
+      mongodbError => {
+        if (mongodbError) {
+          onFail({
+            errors: [
+              {
+                code: 500,
+                message: "users database is broken :( Please report this!"
+              }
+            ]
+          });
+        } else {
+          onFail({
+            errors: [
+              {
+                code: 404,
+                message: "User with uid (" + uid + ") could not be found!"
+              }
+            ]
+          });
+        }
+      }
+    );
   }
 };
 
@@ -277,22 +309,30 @@ function sendRequest(uid, requestUrl, onSuccess, onFail, refreshed) {
       unAuthorize(
         uid,
         () => {
-          var user = udb.getUserWithUID(uid);
-          if (user && user.connectedSources.includes("onedrive")) {
-            user.connectedSources.splice(
-              user.connectedSources.indexOf("onedrive"),
-              1
-            );
-            udb.saveUsers();
-          }
-          onFail({
-            errors: [
-              {
-                code: 500,
-                message: "The user's onedrive access token is broken :("
-              }
-            ]
-          });
+          udb.removeConnectedSource(
+            req.body.uid,
+            "onedrive",
+            () => {
+              onFail({
+                errors: [
+                  {
+                    code: 500,
+                    message: "The user's onedrive access token is broken :("
+                  }
+                ]
+              });
+            },
+            () => {
+              onFail({
+                errors: [
+                  {
+                    code: 500,
+                    message: "users database is broken :( Please report this!"
+                  }
+                ]
+              });
+            }
+          );
         },
         () => {
           onFail({

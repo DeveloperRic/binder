@@ -2,8 +2,6 @@ Source = require("../model/app.model.source");
 const gdrive = require("./app.server.source.gdrive");
 const onedrive = require("./app.server.source.onedrive");
 
-const udb = require("./app.server.user");
-
 exports.sources = [
   new Source("gdrive", "Google Drive"),
   new Source("onedrive", "Onedrive"),
@@ -34,7 +32,7 @@ exports.beginConnect = function(
 ) {
   switch (sourceId) {
     case "gdrive":
-      gdrive.beginAuthorize(uid, forceUpdate, onPrompt, onSuccess);
+      gdrive.beginAuthorize(uid, forceUpdate, onPrompt, onSuccess, onFail);
       break;
     case "onedrive":
       onedrive.beginAuthorize(uid, forceUpdate, onPrompt, onSuccess, onFail);

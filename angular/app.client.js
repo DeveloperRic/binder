@@ -240,6 +240,7 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
       })
       .fail(function(xhr, status, error) {
         $scope.postError("That email address is already being used.");
+        $scope.$apply();
       });
   };
   $scope.login = function() {
@@ -1315,7 +1316,7 @@ client.controller("accountCtrl", function(
     }
   };
   $scope.updateProfile = function() {
-    $.post("api/user/" + $rootScope.user().uid + "/update/profile", {
+    $.post("api/user/" + $rootScope.user().uid + "/updateprofile", {
       profile: {
         firstname: $scope.profile.firstname,
         lastname: $scope.profile.lastname
@@ -1337,7 +1338,7 @@ client.controller("accountCtrl", function(
     if ($scope.profile.email != $rootScope.user().email) {
       if ($scope.profile.password == $rootScope.user().password) {
         var oldEmailAddress = $rootScope.user().email;
-        $.post("api/user/" + $rootScope.user().uid + "/update/email", {
+        $.post("api/user/" + $rootScope.user().uid + "/updateemail", {
           email: $scope.profile.email
         }).done(user => {
           $rootScope.loggedInUser = user;
@@ -1360,11 +1361,9 @@ client.controller("accountCtrl", function(
         });
       } else {
         $scope.emailStatus = "Incorrect password";
-        $scope.$apply();
       }
     } else {
       $scope.emailStatus = "Your email address is unchanged.";
-      $scope.$apply();
     }
   };
 });

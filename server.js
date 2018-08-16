@@ -1,8 +1,9 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-
 const fs = require("fs");
+
+const mongodb = require("./node/app.server.mongodb");
 const udb = require("./node/app.server.user");
 const sdb = require("./node/app.server.source");
 const onedrive = require("./node/app.server.source.onedrive");
@@ -41,16 +42,29 @@ app.route("/api/user/newuser").post((req, res) => {
     res.sendStatus(400);
     return;
   }
-  var result = udb.newUser(req.body.email, req.body.password);
-  if (result.access) {
-    var sessionKey = udb.registerUserSession(
-      result.user.uid,
-      req.body.expiration
-    );
-    res.status(201).send({ sessionKey: sessionKey, user: result.user });
-  } else {
-    res.sendStatus(403);
-  }
+  udb.newUser(
+    req.body.email,
+    req.body.password,
+    user => {
+      udb.registerUserSession(
+        user.uid,
+        req.body.expiration,
+        sessionKey => {
+          res.status(201).send({ sessionKey: sessionKey, user: user });
+        },
+        () => {
+          res.sendStatus(500);
+        }
+      );
+    },
+    mongodbError => {
+      if (mongodbError) {
+        res.sendStatus(500);
+      } else {
+        res.sendStatus(403);
+      }
+    }
+  );
 });
 
 app.route("/api/user/loginuser").post((req, res) => {
@@ -58,20 +72,31 @@ app.route("/api/user/loginuser").post((req, res) => {
     res.sendStatus(400);
     return;
   }
-  var result = udb.getUserWithEmailPassword(req.body.email, req.body.password);
-  if (result.user) {
-    if (result.access) {
-      var sessionKey = udb.registerUserSession(
-        result.user.uid,
-        req.body.expiration
+  udb.getUserWithEmailPassword(
+    req.body.email,
+    req.body.password,
+    user => {
+      udb.registerUserSession(
+        user.uid,
+        req.body.expiration,
+        sessionKey => {
+          res.status(200).send({ sessionKey: sessionKey, user: user });
+        },
+        () => {
+          res.sendStatus(500);
+        }
       );
-      res.status(200).send({ sessionKey: sessionKey, user: result.user });
-    } else {
-      res.sendStatus(401);
+    },
+    (mongodbError, userFound) => {
+      if (mongodbError) {
+        res.sendStatus(500);
+      } else if (userFound) {
+        res.sendStatus(401);
+      } else {
+        res.sendStatus(404);
+      }
     }
-  } else {
-    res.sendStatus(404);
-  }
+  );
 });
 
 app.route("/api/user/logoutuser").post((req, res) => {
@@ -79,8 +104,15 @@ app.route("/api/user/logoutuser").post((req, res) => {
     res.sendStatus(400);
     return;
   }
-  udb.endUserSession(req.body.uid);
-  res.sendStatus(200);
+  udb.endUserSession(
+    req.body.uid,
+    () => {
+      res.sendStatus(200);
+    },
+    () => {
+      res.sendStatus(500);
+    }
+  );
 });
 
 app.route("/api/user/:uid").get((req, res) => {
@@ -88,16 +120,22 @@ app.route("/api/user/:uid").get((req, res) => {
     res.sendStatus(400);
     return;
   }
-  var result = udb.getUserWithSessionKey(req.params.uid, req.query.sessionKey);
-  if (result.user) {
-    if (result.access) {
-      res.status(200).send(result.user);
-    } else {
-      res.sendStatus(401);
+  udb.getUserWithSessionKey(
+    req.params.uid,
+    req.query.sessionKey,
+    user => {
+      res.status(200).send(user);
+    },
+    (mongodbError, invalidSessionKey) => {
+      if (mongodbError) {
+        res.sendStatus(500);
+      } else if (invalidSessionKey) {
+        res.sendStatus(401);
+      } else {
+        res.sendStatus(404);
+      }
     }
-  } else {
-    res.sendStatus(404);
-  }
+  );
 });
 
 app.route("/api/user/:uid/navigation").get((req, res) => {
@@ -105,23 +143,57 @@ app.route("/api/user/:uid/navigation").get((req, res) => {
     res.sendStatus(400);
     return;
   }
-  res.status(200).send(udb.getNavigation(req.params.uid));
+  udb.getNavigation(
+    req.params.uid,
+    nav => {
+      res.send(nav);
+    },
+    nav => {
+      res.status(500).send(nav);
+    }
+  );
 });
 
-app.route("/api/user/:uid/update/:key").post((req, res) => {
-  if (!verifyParams(req.params.uid, req.params.key, req.body[req.params.key])) {
+app.route("/api/user/:uid/updateemail").post((req, res) => {
+  // TODO support email changes
+  if (!verifyParams(req.params.uid, req.body.email)) {
     res.sendStatus(400);
     return;
   }
-  res
-    .status(200)
-    .send(
-      udb.updateProfile(
-        req.params.uid,
-        req.params.key,
-        req.body[req.params.key]
-      )
-    );
+  udb.getUserWithUID(
+    req.params.uid,
+    user => {
+      res.send(user);
+    },
+    mongodbError => {
+      if (mongodbError) {
+        res.sendStatus(500);
+      } else {
+        res.sendStatus(404);
+      }
+    }
+  );
+});
+
+app.route("/api/user/:uid/updateprofile").post((req, res) => {
+  if (!verifyParams(req.params.uid, req.body.profile)) {
+    res.sendStatus(400);
+    return;
+  }
+  udb.updateProfile(
+    req.params.uid,
+    req.body.profile,
+    user => {
+      res.send(user);
+    },
+    mongodbError => {
+      if (mongodbError) {
+        res.sendStatus(500);
+      } else {
+        res.sendStatus(404);
+      }
+    }
+  );
 });
 
 app.route("/api/user/:uid/setaccesslevel").post((req, res) => {
@@ -129,9 +201,21 @@ app.route("/api/user/:uid/setaccesslevel").post((req, res) => {
     res.sendStatus(400);
     return;
   }
-  var user = udb.setAccessLevel(req.params.uid, req.body.newAccessLevel);
-  var failedSources = sdb.updateAccessLevels(req.params.uid);
-  res.status(200).send({ user: user, failedSources: failedSources });
+  udb.setAccessLevel(
+    req.params.uid,
+    req.body.newAccessLevel,
+    user => {
+      var failedSources = sdb.updateAccessLevels(req.params.uid);
+      res.send({ user: user, failedSources: failedSources });
+    },
+    mongodbError => {
+      if (mongodbError) {
+        res.sendStatus(500);
+      } else {
+        res.sendStatus(404);
+      }
+    }
+  );
 });
 
 app.route("/api/source/list").get((req, res) => {
@@ -151,11 +235,20 @@ app.route("/api/source/:sourceId/beginconnect").post((req, res) => {
       res.status(206).send(authUrl);
     },
     () => {
-      var user = udb.getUserWithUID(req.body.uid);
-      if (!user.connectedSources.includes(req.params.sourceId)) {
-        user.connectedSources.push(req.params.sourceId);
-      }
-      res.sendStatus(200);
+      udb.addConnectedSource(
+        req.body.uid,
+        req.params.sourceId,
+        () => {
+          res.sendStatus(200);
+        },
+        mongodbError => {
+          if (mongodbError) {
+            res.sendStatus(500);
+          } else {
+            res.sendStatus(404);
+          }
+        }
+      );
     },
     error => handleError(res, error)
   );
@@ -174,12 +267,27 @@ app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
     req.body.uid,
     req.body.code,
     () => {
-      var user = udb.getUserWithUID(req.body.uid);
-      if (!user.connectedSources.includes(req.params.sourceId)) {
-        user.connectedSources.push(req.params.sourceId);
-        udb.saveUsers();
-      }
-      res.status(200).send(user);
+      var onFailHandler = mongodbError => {
+        if (mongodbError) {
+          res.sendStatus(500);
+        } else {
+          res.sendStatus(404);
+        }
+      };
+      udb.addConnectedSource(
+        req.body.uid,
+        req.params.sourceId,
+        () => {
+          udb.getUserWithUID(
+            req.body.uid,
+            user => {
+              res.send(user);
+            },
+            onFailHandler
+          );
+        },
+        onFailHandler
+      );
     },
     error => handleError(res, error)
   );
@@ -197,15 +305,27 @@ app.route("/api/source/:sourceId/disconnect").post((req, res) => {
     req.params.sourceId,
     req.body.uid,
     () => {
-      var user = udb.getUserWithUID(req.body.uid);
-      if (user.connectedSources.includes(req.params.sourceId)) {
-        user.connectedSources.splice(
-          user.connectedSources.indexOf(req.params.sourceId),
-          1
-        );
-        udb.saveUsers();
-      }
-      res.status(200).send(user);
+      var onFailHandler = mongodbError => {
+        if (mongodbError) {
+          res.sendStatus(500);
+        } else {
+          res.sendStatus(404);
+        }
+      };
+      udb.removeConnectedSource(
+        req.body.uid,
+        req.params.sourceId,
+        () => {
+          udb.getUserWithUID(
+            uid,
+            user => {
+              res.send(user);
+            },
+            onFailHandler
+          );
+        },
+        onFailHandler
+      );
     },
     error => handleError(res, error)
   );
@@ -303,22 +423,26 @@ app.route("/api/source/:sourceId/search").get((req, res) => {
   );
 });
 
-app.route("/api/source/onedrive/:fileId/collection/:collection").get((req, res) => {
-  if (!verifyParams(req.query.uid, req.params.fileId, req.params.collection)) {
-    res.sendStatus(400);
-    return;
-  }
-  // TODO remember to remove onedrive from app requirements if adding other sources
-  onedrive.getFileCollection(
-    req.query.uid,
-    req.params.fileId,
-    req.params.collection,
-    file => {
-      res.status(200).send(file);
-    },
-    error => handleError(res, error)
-  );
-});
+app
+  .route("/api/source/onedrive/:fileId/collection/:collection")
+  .get((req, res) => {
+    if (
+      !verifyParams(req.query.uid, req.params.fileId, req.params.collection)
+    ) {
+      res.sendStatus(400);
+      return;
+    }
+    // TODO remember to remove onedrive from app requirements if adding other sources
+    onedrive.getFileCollection(
+      req.query.uid,
+      req.params.fileId,
+      req.params.collection,
+      file => {
+        res.status(200).send(file);
+      },
+      error => handleError(res, error)
+    );
+  });
 
 app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
   if (!verifyParams(req.query.uid, req.params.fileId)) {
@@ -419,6 +543,6 @@ function handleError(res, error) {
 // --------------------------------------------------
 
 var server = app.listen(8080, () => {
-  udb.loadUsers();
+  mongodb.connect();
   console.log("Binder server launched on port 8080");
 });

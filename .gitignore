@@ -2,5 +2,3 @@
 server_data/adawda.json
 server_data/app.server.source.gdrive.credentials.json
 server_data/app.server.source.onedrive.credentials.json
-server_data/app.server.user.sessions.json
-server_data/app.server.user.users.json

@@ -108,7 +108,13 @@ function getAuth(uid) {
   return oAuth2Client;
 }
 
-exports.beginAuthorize = function(uid, forceUpdate, onPrompt, onSuccess) {
+exports.beginAuthorize = function(
+  uid,
+  forceUpdate,
+  onPrompt,
+  onSuccess,
+  onFail
+) {
   var oAuth2Client = new google.auth.OAuth2(
     client_id,
     client_secret,
@@ -119,22 +125,48 @@ exports.beginAuthorize = function(uid, forceUpdate, onPrompt, onSuccess) {
     oAuth2Client.setCredentials(userToken);
     onSuccess();
   } else {
-    getAccessToken(uid, oAuth2Client, onPrompt);
+    getAccessToken(uid, oAuth2Client, onPrompt, onFail);
   }
 };
 
-function getAccessToken(uid, oAuth2Client, onPrompt) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: SCOPE_LEVELS[udb.getUserWithUID(uid).accessLevel]
-  });
-  var authSession = getAuthSession(uid);
-  if (authSession != null) {
-    authSession.authclient = oAuth2Client;
-  } else {
-    authSessions.push({ uid: uid, authclient: oAuth2Client });
-  }
-  onPrompt(authUrl);
+function getAccessToken(uid, oAuth2Client, onPrompt, onFail) {
+  udb.getUserWithUID(
+    uid,
+    user => {
+      const authUrl = oAuth2Client.generateAuthUrl({
+        access_type: "offline",
+        scope: SCOPE_LEVELS[user.accessLevel]
+      });
+      var authSession = getAuthSession(uid);
+      if (authSession != null) {
+        authSession.authclient = oAuth2Client;
+      } else {
+        authSessions.push({ uid: uid, authclient: oAuth2Client });
+      }
+      onPrompt(authUrl);
+    },
+    mongodbError => {
+      if (mongodbError) {
+        onFail({
+          errors: [
+            {
+              code: 500,
+              message: "users database is broken :( Please report this!"
+            }
+          ]
+        });
+      } else {
+        onFail({
+          errors: [
+            {
+              code: 404,
+              message: "User with uid (" + uid + ") could not be found!"
+            }
+          ]
+        });
+      }
+    }
+  );
 }
 
 exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
