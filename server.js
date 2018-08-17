@@ -12,7 +12,7 @@ const email = require("./node/app.server.email");
 var app = express();
 
 // DON'T FORGET TO MAKE THIS WEB APP HTTPS!!!
-// ALSO MAKE SURE ALL MODULES USE THE UPDATED IP ADDRESS!
+// ALSO MAKE SURE ALL MODULES USE THE UPDATED WEB ADDRESS!
 //  modules to look out for:
 //   - app.server.email
 //   - app.server.source.onedrive.js
@@ -544,6 +544,6 @@ function handleError(res, error) {
 // --------------------------------------------------
 
 var server = app.listen(8080, () => {
-  //mongodb.connect();
+  mongodb.connect();
   console.log("Binder server launched on port 8080");
 });
