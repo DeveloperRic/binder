@@ -11,8 +11,7 @@ exports.connect = function() {
   MongoClient.connect(
     url,
     {
-      useNewUrlParser: true,
-      poolSize: 10
+      useNewUrlParser: true
     },
     function(err, client) {
       assert.equal(null, err);

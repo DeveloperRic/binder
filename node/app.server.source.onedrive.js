@@ -168,7 +168,7 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
     (error, response, body) => {
       var data = JSON.parse(body);
       if (!error && response.statusCode == 200) {
-        setUserToken(uid, token, onSuccess, () => {
+        setUserToken(uid, data, onSuccess, () => {
           onFail({
             errors: [
               {

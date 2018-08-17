@@ -543,7 +543,7 @@ function handleError(res, error) {
 
 // --------------------------------------------------
 
-var server = app.listen(8080, () => {
+app.listen(8080, () => {
   mongodb.connect();
   console.log("Binder server launched on port 8080");
 });
