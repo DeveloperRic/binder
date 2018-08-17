@@ -22,11 +22,12 @@
       <div class="source-status">
         <span ng-if="source.id != 'dropbox'">{{user.connectedSources.includes(source.id) ? 'Connected' : 'Not connected'}}</span>
         <span ng-if="source.id == 'dropbox'">Support for Dropbox is coming soon</span>
+        <span ng-if="source.id == 'onedrive'"><br/>*unstable*</span>
       </div>
       <a class="source-enter" ng-href="/files?sourceId={{source.id}}&folderId=root" ng-style="styles[source.id]" ng-show="user.connectedSources.includes(source.id)">
         View files
       </a>
-      <a class="source-enter source-connect" ng-href="/connect?forceUpdate=true" ng-show="!user.connectedSources.includes(source.id)">
+      <a class="source-enter source-connect" ng-href="/connect?forceUpdate=true" ng-show="!user.connectedSources.includes(source.id) && source.id != 'dropbox'">
         Connect Source
       </a>
     </div>

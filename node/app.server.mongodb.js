@@ -69,6 +69,30 @@ function updateDocument(collectionName, query, operation, onSuccess, onFail) {
 }
 exports.updateDocument = updateDocument;
 
+exports.upsertDocument = function(
+  collectionName,
+  query,
+  $set,
+  onSuccess,
+  onFail
+) {
+  mongodb
+    .collection(collectionName)
+    .updateOne(
+      query,
+      // { $set: $set, $setOnInsert: $setOnInsert }
+      { $set: $set },
+      { upsert: true },
+      function(err, result) {
+        if (err) {
+          console.error(err);
+          return onFail(err, result);
+        }
+        onSuccess(result);
+      }
+    );
+};
+
 exports.removeDocument = function(collectionName, query, onSuccess, onFail) {
   mongodb.collection(collectionName).deleteOne(query, function(err, result) {
     if (err) {

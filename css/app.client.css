@@ -263,7 +263,7 @@ ul {
   margin-top: 20px;
 }
 
-#connectOnedriveStage {
+#connectCallbackStage {
   display: flex;
   flex-direction: column;
   align-items: center;

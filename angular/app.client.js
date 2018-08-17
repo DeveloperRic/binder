@@ -23,9 +23,9 @@ client.config(function($locationProvider, $routeProvider) {
       templateUrl: "app.client.stage.connect.html",
       controller: "connectCtrl"
     })
-    .when("/connect/onedrive", {
-      templateUrl: "app.client.stage.connect.onedrive.html",
-      controller: "connectOnedriveCtrl"
+    .when("/connect/:sourceId", {
+      templateUrl: "app.client.stage.connect.callback.html",
+      controller: "connectCallbackCtrl"
     })
     .when("/dashboard", {
       templateUrl: "app.client.stage.dashboard.html",
@@ -166,8 +166,6 @@ client.run(function(
         );
       });
   };
-  $rootScope.beginExternalConnect = function() {};
-  $rootScope.notifyExternalConnectCompleted = function() {};
 });
 
 $(document).ready(function() {
@@ -374,18 +372,12 @@ client.controller("connectCtrl", function(
         }
       );
   };
-  $rootScope.beginExternalConnect = $scope.onSelect;
   $scope.onRedirect = () => {
-    if ($scope.selected.id == "gdrive") {
-      $window.open($scope.redirectURL);
-      $scope.responseReady = true;
-    } else {
-      $cookies.put(
-        "app.client.data.onedrive.callback",
-        "/connect?forceUpdate=true"
-      );
-      $window.open($scope.redirectURL, "_self");
-    }
+    $cookies.put(
+      "app.client.data." + $scope.selected.id + ".callback",
+      "/connect?forceUpdate=true"
+    );
+    $window.open($scope.redirectURL, "_self");
   };
   $scope.responseReady = false;
   $scope.authcode = "";
@@ -413,7 +405,6 @@ client.controller("connectCtrl", function(
     $scope.sourceConnected[sourceid] = true;
     $scope.hasConnected = true;
   };
-  $rootScope.notifyExternalConnectCompleted = $scope.onConnect;
   $scope.forceUpdate = [];
   $scope.sourceConnected = {
     gdrive: false,
@@ -429,7 +420,7 @@ client.controller("connectCtrl", function(
   };
 });
 
-client.controller("connectOnedriveCtrl", function(
+client.controller("connectCallbackCtrl", function(
   $scope,
   $rootScope,
   $routeParams,
@@ -439,11 +430,25 @@ client.controller("connectOnedriveCtrl", function(
 ) {
   $scope.resultPending = true;
   $scope.isConnected = false;
+  
+  var sourceId = $routeParams.sourceId;
 
   $rootScope.user(
     user => {
       if ($routeParams.code) {
-        $.post("api/source/onedrive/finishconnect", {
+        $rootScope.sources(
+          sources => {
+            for (let i in sources) {
+              if (sources[i].id == sourceId) {
+                $scope.source = sources[i];
+                $scope.$apply();
+                break;
+              }
+            }
+          },
+          () => {}
+        );
+        $.post("api/source/" + sourceId + "/finishconnect", {
           uid: user.uid,
           code: $routeParams.code
         })
@@ -451,7 +456,6 @@ client.controller("connectOnedriveCtrl", function(
             $rootScope.loggedInUser = data;
             $scope.resultPending = false;
             $scope.isConnected = true;
-            $rootScope.notifyExternalConnectCompleted("onedrive");
             $scope.$apply();
           })
           .fail((xhr, status, error) => {
@@ -471,9 +475,9 @@ client.controller("connectOnedriveCtrl", function(
   );
 
   $scope.onSuccess = function() {
-    var callback = $cookies.get("app.client.data.onedrive.callback");
+    var callback = $cookies.get("app.client.data." + sourceId + ".callback");
     if (callback) {
-      $cookies.remove("app.client.data.onedrive.callback");
+      $cookies.remove("app.client.data." + sourceId + ".callback");
       $location.url(callback);
     } else {
       $location.url("/connect?" + $httpParamSerializer({ forceUpdate: true }));
@@ -483,7 +487,7 @@ client.controller("connectOnedriveCtrl", function(
   $scope.onFail = function() {
     $location.url(
       "/connect?" +
-        $httpParamSerializer({ forceUpdate: true, updateSources: "onedrive" })
+        $httpParamSerializer({ forceUpdate: true, updateSources: sourceId })
     );
     $location.replace();
   };

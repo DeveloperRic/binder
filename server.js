@@ -205,8 +205,9 @@ app.route("/api/user/:uid/setaccesslevel").post((req, res) => {
     req.params.uid,
     req.body.newAccessLevel,
     user => {
-      var failedSources = sdb.updateAccessLevels(req.params.uid);
-      res.send({ user: user, failedSources: failedSources });
+      sdb.updateAccessLevels(req.params.uid, failedSources => {
+        res.send({ user: user, failedSources: failedSources });
+      });
     },
     mongodbError => {
       if (mongodbError) {
@@ -317,7 +318,7 @@ app.route("/api/source/:sourceId/disconnect").post((req, res) => {
         req.params.sourceId,
         () => {
           udb.getUserWithUID(
-            uid,
+            req.body.uid,
             user => {
               res.send(user);
             },

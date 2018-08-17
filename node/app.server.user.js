@@ -171,7 +171,7 @@ exports.removeConnectedSource = function(uid, sourceId, onSuccess, onFail) {
     USERS_COL_NAME,
     { uid: uid },
     {
-      $pullAll: { connectedSources: sourceId }
+      $pull: { connectedSources: sourceId }
     },
     onSuccess,
     () => {

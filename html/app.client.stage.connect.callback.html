@@ -1,5 +1,5 @@
-<div id="connectOnedriveStage" class="stage center">
-  <h1 class="text-muted">Connect to Onedrive</h1>
+<div id="connectCallbackStage" class="stage center">
+  <h1 class="text-muted">Connect to {{source.name ? source.name : 'a source'}}</h1>
   <div ng-show="resultPending">
     <h3>Please wait while your account is connected...</h3>
     <br />
@@ -7,12 +7,12 @@
   </div>
   <div ng-show="!resultPending">
     <div ng-show="isConnected">
-      <h3>Your Onedrive account has been successfully linked!</h3>
+      <h3>Your {{source.name}} account has been successfully linked!</h3>
       <br />
       <button type="submit" class="btn text-color-inverse background-accent" ng-click="onSuccess()">Return to previous page</button>
     </div>
     <div ng-show="!isConnected">
-      <h3>Unfortunately, your Onedrive account could not be linked.</h3>
+      <h3>Unfortunately, your {{source.name}} account could not be linked.</h3>
       <br />
       <button type="submit" class="btn text-color-inverse background-accent" ng-click="onFail()">Try again</button>
     </div>
