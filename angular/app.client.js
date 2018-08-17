@@ -430,7 +430,7 @@ client.controller("connectCallbackCtrl", function(
 ) {
   $scope.resultPending = true;
   $scope.isConnected = false;
-  
+
   var sourceId = $routeParams.sourceId;
 
   $rootScope.user(
@@ -1260,23 +1260,11 @@ client.controller("accountCtrl", function(
         .then(
           response => {
             if (response.status == 206) {
-              if (source.id == "gdrive") {
-                $location.url(
-                  "/connect?" +
-                    $httpParamSerializer({
-                      callback: $location.url(),
-                      forceUpdate: true,
-                      updateSources: ["gdrive"]
-                    })
-                );
-                $location.replace();
-              } else {
-                $cookies.put(
-                  "app.client.data.onedrive.callback",
-                  $location.url()
-                );
-                $window.open(response.data, "_self");
-              }
+              $cookies.put(
+                "app.client.data." + source.id + ".callback",
+                $location.url()
+              );
+              $window.open(response.data, "_self");
             } else {
               $window.alert(source.name + " is already connected");
             }

@@ -16,6 +16,8 @@ var app = express();
 //  modules to look out for:
 //   - app.server.email
 //   - app.server.source.onedrive.js
+//
+// TODO: DON'T FORGET TO RESTRICT APP_SECRET ORIGINS FOR ALL SOURCES
 
 //app.use("/node", express.static("./node"));
 app.use("/angular", express.static("./angular"));
@@ -268,7 +270,7 @@ app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
     req.body.uid,
     req.body.code,
     () => {
-      var onFailHandler = mongodbError => {
+      var onFailHandler = function(mongodbError) {
         if (mongodbError) {
           res.sendStatus(500);
         } else {

@@ -10,7 +10,7 @@ const drive = google.drive({ version: "v3" });
 
 var client_secret;
 var client_id;
-var redirect_uris;
+var redirect_uri;
 
 var authSessions = [];
 
@@ -32,10 +32,10 @@ exports.init = function() {
           return console.log("Error loading gdrive client secret file: ", err);
         }
       }
-      const credentials = JSON.parse(content).installed;
+      var credentials = JSON.parse(content).web;
       client_secret = credentials.client_secret;
       client_id = credentials.client_id;
-      redirect_uris = credentials.redirect_uris;
+      redirect_uri = credentials.redirect_uris[0];
     }
   );
 };
@@ -95,7 +95,7 @@ function getAuth(uid, onSuccess, onFail) {
         var oAuth2Client = new google.auth.OAuth2(
           client_id,
           client_secret,
-          redirect_uris[0]
+          redirect_uri
         );
         oAuth2Client.setCredentials(token);
         onSuccess(oAuth2Client);
@@ -143,7 +143,7 @@ function getAccessToken(uid, onPrompt, onFail) {
       var oAuth2Client = new google.auth.OAuth2(
         client_id,
         client_secret,
-        redirect_uris[0]
+        redirect_uri
       );
       const authUrl = oAuth2Client.generateAuthUrl({
         access_type: "offline",

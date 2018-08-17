@@ -1,7 +1,7 @@
 const fs = require("fs");
 const request = require("request");
-const mongodb = require("./app.server.mongodb");
 
+const mongodb = require("./app.server.mongodb");
 const udb = require("../node/app.server.user");
 
 const TOKENS_COL_NAME = "source.onedrive.credentials";
@@ -14,9 +14,6 @@ const SCOPE_LEVELS = [
   "user.read files.read.all",
   "user.read files.readwrite.all"
 ];
-
-// DELETE APP_SECRET PASS IF NOT NEEDED!!!
-// REMEMBER ONEDRIVE API RETURNS A MISSPELLED ACCESS TOKEN IN CREDENTIALS FILE!
 
 exports.init = function() {
   // Load app secret from a local file.
@@ -47,7 +44,7 @@ function getUserToken(uid, onSuccess, onFail) {
         // not a mongodb error / token was not found
         onSuccess(null);
       } else {
-        onSuccess(docs[0].token);
+        onSuccess(docs[0]);
       }
     },
     () => {
@@ -60,8 +57,8 @@ function getUserToken(uid, onSuccess, onFail) {
 function setUserToken(uid, token, onSuccess, onFail) {
   if (token != null) {
     var expiry = new Date();
-    // expiry.setTime(expiry.getTime() + (token.expires_in - 10) * 1000);
-    expiry.setTime(expiry.getTime() + 1000);
+    expiry.setTime(expiry.getTime() + (token.expires_in - 10) * 1000);
+    // expiry.setTime(expiry.getTime() + 10000);
 
     mongodb.upsertDocument(
       TOKENS_COL_NAME,
@@ -118,128 +115,107 @@ exports.beginAuthorize = function(
           },
           mongodbError => {
             if (mongodbError) {
-              onFail({
-                errors: [
-                  {
-                    code: 500,
-                    message:
-                      "onedrive token database is broken :( Please report this!"
-                  }
-                ]
-              });
+              failParser(
+                500,
+                "onedrive token database is broken :( Please report this!",
+                onFail
+              );
             } else {
-              onFail({
-                errors: [
-                  {
-                    code: 404,
-                    message: "User with uid (" + uid + ") could not be found!"
-                  }
-                ]
-              });
+              failParser(
+                404,
+                "User with uid (" + uid + ") could not be found!",
+                onFail
+              );
             }
           }
         );
       }
     },
     () => {
-      onFail({
-        errors: [
-          {
-            code: 500,
-            message: "onedrive token database is broken :( Please report this!"
-          }
-        ]
-      });
+      failParser(
+        500,
+        "onedrive token database is broken :( Please report this!",
+        onFail
+      );
     }
   );
 };
 
 exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
-  request.post(
-    "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+  sendAuthorizationRequest(
+    uid,
     {
-      form: {
-        client_id: app_secret.client_id,
-        client_secret: app_secret.client_secret,
-        code: code,
-        grant_type: "authorization_code"
-      }
+      grant_type: "authorization_code",
+      code: code
     },
-    (error, response, body) => {
-      var data = JSON.parse(body);
-      if (!error && response.statusCode == 200) {
-        setUserToken(uid, data, onSuccess, () => {
-          onFail({
-            errors: [
-              {
-                code: 500,
-                message: "Couldn't update user's onedrive access token"
-              }
-            ]
-          });
-        });
-        onSuccess();
-      } else {
-        onFail(parseErrorJSON(response.statusCode, data));
-      }
-    }
+    onSuccess,
+    onFail
   );
 };
 
 function refreshAccessToken(uid, onSuccess, onFail) {
   getUserToken(
     uid,
-    token => {
-      request.post(
-        "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    userToken => {
+      sendAuthorizationRequest(
+        uid,
         {
-          form: {
-            client_id: app_secret.client_id,
-            redirect_uri: encodeURIComponent(
-              "http://localhost:8080/connect/onedrive"
-            ),
-            client_secret: app_secret.client_secret,
-            refresh_token: token.refresh_token,
-            grant_type: "refresh_token"
-          }
+          grant_type: "refresh_token",
+          refresh_token: userToken.token.refresh_token
         },
-        (error, response, body) => {
-          var data = JSON.parse(body);
-          if (!error && response.statusCode == 200) {
-            setUserToken(uid, data, onSuccess, () => {
-              onFail({
-                errors: [
-                  {
-                    code: 500,
-                    message: "Couldn't update user's onedrive token"
-                  }
-                ]
-              });
-            });
-          } else {
-            onFail(parseErrorJSON(response.statusCode, data));
-          }
-        }
+        onSuccess,
+        onFail
       );
     },
     () => {
-      onFail({
-        errors: [
-          {
-            code: 500,
-            message: "onedrive token database is broken :( Please report this!"
-          }
-        ]
-      });
+      failHandler(
+        500,
+        "onedrive token database is broken :( Please report this!",
+        onFail
+      );
+    }
+  );
+}
+
+function sendAuthorizationRequest(uid, authOptions, onSuccess, onFail) {
+  var options = {
+    client_id: app_secret.client_id,
+    client_secret: app_secret.client_secret,
+    grant_type: authOptions.grant_type
+  };
+  if (authOptions.code) {
+    options = Object.assign(options, { code: authOptions.code });
+  }
+  if (authOptions.refresh_token) {
+    options = Object.assign(options, {
+      refresh_token: authOptions.refresh_token
+    });
+  }
+  request.post(
+    "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    {
+      form: options
+    },
+    (error, response, body) => {
+      var data = JSON.parse(body);
+      if (!error && response.statusCode == 200) {
+        setUserToken(uid, data, onSuccess, () => {
+          failParser(
+            500,
+            "Couldn't update user's onedrive access token",
+            onFail
+          );
+        });
+      } else {
+        onFail(parseErrorJSON(response.statusCode, data));
+      }
     }
   );
 }
 
 function unAuthorize(uid, onSuccess, onFail) {
   setUserToken(uid, null, onSuccess, () => {
-    onFail({
-      errors: [{ code: 500, message: "Couldn't disconnect user's onedrive" }]
-    });
+    failHandler(500, "Couldn't disconnect user's onedrive", onFail);
   });
 }
 
@@ -318,14 +294,11 @@ function sendRequest(uid, requestUrl, onSuccess, onFail, refreshed) {
     userToken => {
       // check user token is still valid
       if (userToken == null) {
-        return onFail({
-          errors: [
-            {
-              code: 403,
-              message: "The user doesn't have a onedrive access token!"
-            }
-          ]
-        });
+        return failParser(
+          403,
+          "The user doesn't have a onedrive access token!",
+          onFail
+        );
       }
       if (new Date().getTime() >= userToken.expires) {
         if (!refreshed) {
@@ -344,38 +317,27 @@ function sendRequest(uid, requestUrl, onSuccess, onFail, refreshed) {
                 req.body.uid,
                 "onedrive",
                 () => {
-                  onFail({
-                    errors: [
-                      {
-                        code: 500,
-                        message: "The user's onedrive access token is broken :("
-                      }
-                    ]
-                  });
+                  failParser(
+                    500,
+                    "The user's onedrive access token is broken :(",
+                    onFail
+                  );
                 },
                 () => {
-                  onFail({
-                    errors: [
-                      {
-                        code: 500,
-                        message:
-                          "users database is broken :( Please report this!"
-                      }
-                    ]
-                  });
+                  failParser(
+                    500,
+                    "users database is broken :( Please report this!",
+                    onFail
+                  );
                 }
               );
             },
             () => {
-              onFail({
-                errors: [
-                  {
-                    code: 500,
-                    message:
-                      "Storage of onedrive tokens is broken :( Please report this!"
-                  }
-                ]
-              });
+              failParser(
+                500,
+                "Storage of onedrive tokens is broken :( Please report this!",
+                onFail
+              );
             }
           );
         }
@@ -410,14 +372,11 @@ function sendRequest(uid, requestUrl, onSuccess, onFail, refreshed) {
       );
     },
     () => {
-      onFail({
-        errors: [
-          {
-            code: 500,
-            message: "onedrive token database is broken :( Please report this!"
-          }
-        ]
-      });
+      failParser(
+        500,
+        "onedrive token database is broken :( Please report this!",
+        onFail
+      );
     }
   );
 }
@@ -433,4 +392,15 @@ function parseErrorJSON(statusCode, data) {
       }
     ]
   };
+}
+
+function failParser(statusCode, message, failHandler) {
+  return failHandler({
+    errors: [
+      {
+        code: statusCode,
+        message: message
+      }
+    ]
+  });
 }
