@@ -1,36 +1,32 @@
 <div id="loginStage" class="stage">
-	<h1>Welcome back!</h1>
-	<h2>Let's get you signed in...</h2>
-	<form name="loginForm">
-		<table class="center-content background-primary">
-			<tr>
-				<td>Email Address</td>
-				<td>
-					<div class="input">
-						<input type="email" name="email" ng-model="email" required placeholder="email@example.com" />
-						<div class="label-floor"></div>
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td>Password</td>
-				<td>
-					<div class="input">
-						<input type="password" name="password" ng-model="password" required />
-						<div class="label-floor"></div>
-					</div>
-				</td>
-			</tr>
-			<tr class="center-content">
-				<td>
-					<div class="error" ng-show="error.exists">{{error.message}}</div>
-				</td>
-			</tr>
-			<tr class="center-content">
-				<td>
-					<button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="login()">Login</button>
-				</td>
-			</tr>
-		</table>
-	</form>
+	<div class="title">Binder</div>
+	<div class="main-pane background-secondary drop-shadow">
+		<h1>Welcome back!</h1>
+		<h2>Let's get you signed in...</h2>
+		<form name="loginForm">
+			<table class="center-content">
+				<tr>
+					<td>Email Address</td>
+					<td>
+						<div class="input">
+							<input type="email" name="email" ng-model="email" required placeholder="email@example.com" ng-blur="onEmailExit()" ng-class="{'invalid-input': emailInvalid}"
+							/>
+							<div class="label-floor"></div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>Password</td>
+					<td>
+						<div class="input">
+							<input type="password" name="password" ng-model="password" required />
+							<div class="label-floor"></div>
+						</div>
+					</td>
+				</tr>
+			</table>
+			<div class="error" ng-show="error.exists">{{error.message}}</div>
+			<button type="submit" class="btn text-color-inverse background-accent" ng-click="login()">Login</button>
+		</form>
+	</div>
 </div>

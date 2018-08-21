@@ -7,6 +7,7 @@ const mongodb = require("./node/app.server.mongodb");
 const udb = require("./node/app.server.user");
 const sdb = require("./node/app.server.source");
 const onedrive = require("./node/app.server.source.onedrive");
+const dropbox = require("./node/app.server.source.dropbox");
 const email = require("./node/app.server.email");
 
 var app = express();
@@ -39,9 +40,15 @@ app.use(
   })
 );
 
-app.route("/api/user/newuser").post((req, res) => {
-  if (!verifyParams(req.body.email, req.body.password)) {
-    res.sendStatus(400);
+app.route("/api/user/new_user").post((req, res) => {
+  if (
+    !verifyParams(
+      res,
+      ["body.email", "body.password"],
+      req.body.email,
+      req.body.password
+    )
+  ) {
     return;
   }
   udb.newUser(
@@ -69,9 +76,16 @@ app.route("/api/user/newuser").post((req, res) => {
   );
 });
 
-app.route("/api/user/loginuser").post((req, res) => {
-  if (!verifyParams(req.body.email, req.body.password, req.body.expiration)) {
-    res.sendStatus(400);
+app.route("/api/user/login_user").post((req, res) => {
+  if (
+    !verifyParams(
+      res,
+      ["body.email", "body.password", "body.expiration"],
+      req.body.email,
+      req.body.password,
+      req.body.expiration
+    )
+  ) {
     return;
   }
   udb.getUserWithEmailPassword(
@@ -82,7 +96,7 @@ app.route("/api/user/loginuser").post((req, res) => {
         user.uid,
         req.body.expiration,
         sessionKey => {
-          res.status(200).send({ sessionKey: sessionKey, user: user });
+          res.send({ sessionKey: sessionKey, user: user });
         },
         () => {
           res.sendStatus(500);
@@ -101,13 +115,12 @@ app.route("/api/user/loginuser").post((req, res) => {
   );
 });
 
-app.route("/api/user/logoutuser").post((req, res) => {
-  if (!verifyParams(req.body.uid)) {
-    res.sendStatus(400);
+app.route("/api/user/:uid/logout").post((req, res) => {
+  if (!verifyParams(res, ["params.uid"], req.params.uid)) {
     return;
   }
   udb.endUserSession(
-    req.body.uid,
+    req.params.uid,
     () => {
       res.sendStatus(200);
     },
@@ -118,15 +131,21 @@ app.route("/api/user/logoutuser").post((req, res) => {
 });
 
 app.route("/api/user/:uid").get((req, res) => {
-  if (!verifyParams(req.params.uid, req.query.sessionKey)) {
-    res.sendStatus(400);
+  if (
+    !verifyParams(
+      res,
+      ["params.uid", "query.sessionKey"],
+      req.params.uid,
+      req.query.sessionKey
+    )
+  ) {
     return;
   }
   udb.getUserWithSessionKey(
     req.params.uid,
     req.query.sessionKey,
     user => {
-      res.status(200).send(user);
+      res.send(user);
     },
     (mongodbError, invalidSessionKey) => {
       if (mongodbError) {
@@ -141,8 +160,7 @@ app.route("/api/user/:uid").get((req, res) => {
 });
 
 app.route("/api/user/:uid/navigation").get((req, res) => {
-  if (!verifyParams(req.params.uid)) {
-    res.sendStatus(400);
+  if (!verifyParams(res, ["params.uid"], req.params.uid)) {
     return;
   }
   udb.getNavigation(
@@ -156,10 +174,16 @@ app.route("/api/user/:uid/navigation").get((req, res) => {
   );
 });
 
-app.route("/api/user/:uid/updateemail").post((req, res) => {
+app.route("/api/user/:uid/update_email").post((req, res) => {
   // TODO support email changes
-  if (!verifyParams(req.params.uid, req.body.email)) {
-    res.sendStatus(400);
+  if (
+    !verifyParams(
+      res,
+      ["params.uid", "body.email"],
+      req.params.uid,
+      req.body.email
+    )
+  ) {
     return;
   }
   udb.getUserWithUID(
@@ -177,9 +201,15 @@ app.route("/api/user/:uid/updateemail").post((req, res) => {
   );
 });
 
-app.route("/api/user/:uid/updateprofile").post((req, res) => {
-  if (!verifyParams(req.params.uid, req.body.profile)) {
-    res.sendStatus(400);
+app.route("/api/user/:uid/update_profile").post((req, res) => {
+  if (
+    !verifyParams(
+      res,
+      ["params.uid", "body.profile"],
+      req.params.uid,
+      req.body.profile
+    )
+  ) {
     return;
   }
   udb.updateProfile(
@@ -198,9 +228,15 @@ app.route("/api/user/:uid/updateprofile").post((req, res) => {
   );
 });
 
-app.route("/api/user/:uid/setaccesslevel").post((req, res) => {
-  if (!verifyParams(req.params.uid, req.body.newAccessLevel)) {
-    res.sendStatus(400);
+app.route("/api/user/:uid/set_access_level").post((req, res) => {
+  if (
+    !verifyParams(
+      res,
+      ["params.uid", "body.newAccessLevel"],
+      req.params.uid,
+      req.body.newAccessLevel
+    )
+  ) {
     return;
   }
   udb.setAccessLevel(
@@ -222,12 +258,19 @@ app.route("/api/user/:uid/setaccesslevel").post((req, res) => {
 });
 
 app.route("/api/source/list").get((req, res) => {
-  res.status(200).send(sdb.sources);
+  res.send(sdb.sources);
 });
 
-app.route("/api/source/:sourceId/beginconnect").post((req, res) => {
-  if (!verifyParams(req.params.sourceId, req.body.uid, req.body.forceUpdate)) {
-    res.sendStatus(400);
+app.route("/api/source/:sourceId/begin_connect").post((req, res) => {
+  if (
+    !verifyParams(
+      res,
+      ["params.sourceId", "body.uid", "body.forceUpdate"],
+      req.params.sourceId,
+      req.body.uid,
+      req.body.forceUpdate
+    )
+  ) {
     return;
   }
   var result = sdb.beginConnect(
@@ -260,9 +303,16 @@ app.route("/api/source/:sourceId/beginconnect").post((req, res) => {
   }
 });
 
-app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
-  if (!verifyParams(req.params.sourceId, req.body.uid, req.body.code)) {
-    res.sendStatus(400);
+app.route("/api/source/:sourceId/finish_connect").post((req, res) => {
+  if (
+    !verifyParams(
+      res,
+      ["params.sourceId", "body.uid", "body.code"],
+      req.params.sourceId,
+      req.body.uid,
+      req.body.code
+    )
+  ) {
     return;
   }
   var result = sdb.finishConnect(
@@ -300,8 +350,14 @@ app.route("/api/source/:sourceId/finishconnect").post((req, res) => {
 });
 
 app.route("/api/source/:sourceId/disconnect").post((req, res) => {
-  if (!verifyParams(req.params.sourceId, req.body.uid)) {
-    res.sendStatus(400);
+  if (
+    !verifyParams(
+      res,
+      ["params.sourceId", "body.uid"],
+      req.params.sourceId,
+      req.body.uid
+    )
+  ) {
     return;
   }
   var result = sdb.disconnect(
@@ -337,40 +393,50 @@ app.route("/api/source/:sourceId/disconnect").post((req, res) => {
   }
 });
 
-app.route("/api/source/:sourceId/:folderId/children").get((req, res) => {
+app.route("/api/source/:sourceId/:folderId/files").get((req, res) => {
+  listSourceFiles(req, res, req.params.sourceId, req.params.folderId);
+});
+
+app.route("/api/source/dropbox/files").get((req, res) => {
+  listSourceFiles(req, res, "dropbox", req.query.folderPath);
+});
+
+function listSourceFiles(req, res, sourceId, folderId) {
   if (
     !verifyParams(
+      res,
+      ["query.uid", "sourceId", "folderId/folderPath", "query.params"],
       req.query.uid,
-      req.params.sourceId,
-      req.params.folderId,
+      sourceId,
+      folderId,
       req.query.params
     )
   ) {
-    res.sendStatus(400);
     return;
   }
   sdb.listFiles(
     req.query.uid,
-    req.params.sourceId,
-    req.params.folderId,
+    sourceId,
+    folderId,
     req.query.params,
     files => {
-      res.status(200).send(files);
+      res.send(files);
     },
     error => handleError(res, error)
   );
-});
+}
 
-app.route("/api/source/:sourceId/:fileId/getfilemetadata").get((req, res) => {
+app.route("/api/source/:sourceId/:fileId/get_metadata").get((req, res) => {
   if (
     !verifyParams(
+      res,
+      ["query.uid", "params.sourceId", "params.fileId", "query.keys"],
       req.query.uid,
       req.params.sourceId,
       req.params.fileId,
       req.query.keys
     )
   ) {
-    res.sendStatus(400);
     return;
   }
   sdb.getFileMetadata(
@@ -379,24 +445,31 @@ app.route("/api/source/:sourceId/:fileId/getfilemetadata").get((req, res) => {
     req.params.fileId,
     req.query.keys,
     file => {
-      res.status(200).send(file);
+      res.send(file);
     },
     error => handleError(res, error)
   );
 });
 
-app.route("/api/source/updatefilemetadata").post((req, res) => {
+app.route("/api/source/gdrive/:fileId/update_metadata").post((req, res) => {
   // TODO metadata updates should work for all sources
-  if (!verifyParams(req.body.uid, req.body.fileId, req.body.metadata)) {
-    res.sendStatus(400);
+  if (
+    !verifyParams(
+      res,
+      ["body.uid", "params.fileId", "body.metadata"],
+      req.body.uid,
+      req.params.fileId,
+      req.body.metadata
+    )
+  ) {
     return;
   }
   sdb.updateFileMetadata(
     req.body.uid,
-    req.body.fileId,
+    req.params.fileId,
     req.body.metadata,
     ({ data }) => {
-      res.status(200).send(data);
+      res.send(data);
     },
     error => handleError(res, error)
   );
@@ -405,13 +478,14 @@ app.route("/api/source/updatefilemetadata").post((req, res) => {
 app.route("/api/source/:sourceId/search").get((req, res) => {
   if (
     !verifyParams(
+      res,
+      ["query.uid", "params.sourceId", "query.query", "query.params"],
       req.query.uid,
       req.params.sourceId,
       req.query.query,
       req.query.params
     )
   ) {
-    res.sendStatus(400);
     return;
   }
   sdb.search(
@@ -420,7 +494,7 @@ app.route("/api/source/:sourceId/search").get((req, res) => {
     req.query.query,
     req.query.params,
     files => {
-      res.status(200).send(files);
+      res.send(files);
     },
     error => handleError(res, error)
   );
@@ -430,9 +504,14 @@ app
   .route("/api/source/onedrive/:fileId/collection/:collection")
   .get((req, res) => {
     if (
-      !verifyParams(req.query.uid, req.params.fileId, req.params.collection)
+      !verifyParams(
+        res,
+        ["query.uid", "params.fileId","params.collection"],
+        req.query.uid,
+        req.params.fileId,
+        req.params.collection
+      )
     ) {
-      res.sendStatus(400);
       return;
     }
     // TODO remember to remove onedrive from app requirements if adding other sources
@@ -441,22 +520,80 @@ app
       req.params.fileId,
       req.params.collection,
       file => {
-        res.status(200).send(file);
+        res.send(file);
       },
       error => handleError(res, error)
     );
   });
 
-app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
-  if (!verifyParams(req.query.uid, req.params.fileId)) {
-    res.sendStatus(400);
+app.route("/api/source/:sourceId/:fileId/content/*").get((req, res) => {
+  getFileContent(req, res, req.params.sourceId, req.params.fileId);
+});
+
+app.route("/api/source/dropbox/content").get((req, res) => {
+  getFileContent(req, res, "dropbox", req.query.filePath);
+});
+
+function getFileContent(req, res, sourceId, fileId) {
+  if (
+    !verifyParams(
+      res,
+      ["query.uid", "sourceId", "fileId/filePath"],
+      req.query.uid,
+      sourceId,
+      fileId
+    )
+  ) {
     return;
   }
-  onedrive.getFileContent(
+  sdb.getFileContent(
     req.query.uid,
-    req.params.fileId,
+    sourceId,
+    fileId,
     file => {
-      res.status(200).send(file);
+      res.send(file);
+    },
+    error => handleError(res, error)
+  );
+}
+
+app.route("/api/source/dropbox/preview").get((req, res) => {
+  if (
+    !verifyParams(
+      res,
+      ["query.uid", "query.filePath"],
+      req.query.uid,
+      req.query.filePath
+    )
+  ) {
+    return;
+  }
+  dropbox.getFilePreview(
+    req.query.uid,
+    req.query.filePath,
+    result => {
+      res.send(result);
+    },
+    error => handleError(res, error)
+  );
+});
+
+app.route("/api/source/dropbox/thumbnails").get((req, res) => {
+  if (
+    !verifyParams(
+      res,
+      ["query.uid", "query.filePaths"],
+      req.query.uid,
+      req.query.filePaths
+    )
+  ) {
+    return;
+  }
+  dropbox.getFileThumbnails(
+    req.query.uid,
+    req.query.filePaths,
+    result => {
+      res.send(result.entries);
     },
     error => handleError(res, error)
   );
@@ -465,8 +602,8 @@ app.route("/api/source/onedrive/:fileId/content/*").get((req, res) => {
 app.route("/api/email/:templateId/send").post((req, res) => {
   // email is disabled right now due to its current unstable nature
   //
+  // update this vvv
   // if (!verifyParams(req.params.templateId, req.body.uid, req.body.placeholders)) {
-  //   res.sendStatus(400);
   //   return;
   // }
   //
@@ -484,8 +621,14 @@ app.route("/api/email/:templateId/send").post((req, res) => {
 });
 
 app.route("/email/:templateId").get((req, res) => {
-  if (!verifyParams(req.params.templateId, req.query.uid)) {
-    res.sendStatus(400);
+  if (
+    !verifyParams(
+      res,
+      ["params.templateId", "query.uid"],
+      req.params.templateId,
+      req.query.uid
+    )
+  ) {
     return;
   }
   email.viewOnline(req.params.templateId, req.query.uid, content => {
@@ -524,9 +667,10 @@ app.use(function(err, req, res, next) {
   res.status(500).send("Something broke!");
 });
 
-function verifyParams(...params) {
+function verifyParams(res, names, ...params) {
   for (let i in params) {
     if (params[i] == null) {
+      res.status(400).send("Missing body/param/query item -> " + names[i]);
       return false;
     }
   }
@@ -539,13 +683,26 @@ function handleError(res, error) {
       .status(error.code ? error.code : error.errors[0].code)
       .send(error.errors ? error.errors : error);
   } catch (e) {
-    res.status(500).send(error);
+    try {
+      res.status(500).send(error);
+    } catch (e1) {
+      console.log(error);
+      res.sendStatus(500);
+    }
   }
 }
 
 // --------------------------------------------------
 
-app.listen(8080, () => {
-  mongodb.connect();
-  console.log("Binder server launched on port 8080");
-});
+// ensure database connection is established before handling requests
+mongodb.connect(
+  () => {
+    app.listen(8080, () => {
+      console.log("Binder server launched on port 8080");
+    });
+  },
+  err => {
+    console.error(err);
+    console.log("Failed to launch Binder because of MongoDB error.");
+  }
+);

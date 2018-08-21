@@ -5,6 +5,7 @@
     <button class="btn source" ng-click="onSelect('gdrive')" ng-disabled="sourceConnected.gdrive" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.gdrive]">Google Drive</button>
     <button class="btn source" ng-click="onSelect('onedrive')" ng-disabled="sourceConnected.onedrive" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.onedrive]">Onedrive</button>
     <!-- <button class="btn source" ng-click="onSelect('onedrive365')" ng-disabled="sourceConnected.onedrive365" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.onedrive365]">Office 365</button> -->
+    <button class="btn source" ng-click="onSelect('dropbox')" ng-disabled="sourceConnected.dropbox" ng-class="{true: 'background-accent', false: 'background-secondary'}[sourceConnected.dropbox]">Dropbox</button>
   </div>
   <div class="redirect background-secondary" ng-show="redirectReady">
     <button class="btn background-primary" ng-click="onRedirect()">Click to sign into {{selected.name}}</button>

@@ -14,7 +14,7 @@ var redirect_uri;
 
 var authSessions = [];
 
-// If modifying a user's scope, delete their credentials from gdrive.credentials.json.
+// If modifying a user's scope, delete their credentials from database.
 const SCOPE_LEVELS = [
   ["https://www.googleapis.com/auth/drive.metadata.readonly"],
   ["https://www.googleapis.com/auth/drive"]
@@ -147,7 +147,8 @@ function getAccessToken(uid, onPrompt, onFail) {
       );
       const authUrl = oAuth2Client.generateAuthUrl({
         access_type: "offline",
-        scope: SCOPE_LEVELS[user.accessLevel]
+        scope: SCOPE_LEVELS[user.accessLevel],
+        prompt: "consent"
       });
       var authSession = getAuthSession(uid);
       if (authSession != null) {
@@ -190,16 +191,44 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
         onFail(err);
       } else {
         oAuth2Client.setCredentials(token);
-        setUserToken(uid, token, onSuccess, () => {
-          onFail({
-            errors: [
-              {
-                code: 500,
-                message: "Couldn't update user's gdrive access token"
-              }
-            ]
+        var assignUserToken = () => {
+          setUserToken(uid, token, onSuccess, () => {
+            onFail({
+              errors: [
+                {
+                  code: 500,
+                  message: "Couldn't update user's gdrive access token"
+                }
+              ]
+            });
           });
-        });
+        };
+        if (!token.refresh_token) {
+          getUserToken(
+            uid,
+            userToken => {
+              if (userToken && userToken.refresh_token) {
+                token = Object.assign(token, {
+                  refresh_token: userToken.refresh_token
+                });
+              }
+              assignUserToken();
+            },
+            () => {
+              onFail({
+                errors: [
+                  {
+                    code: 500,
+                    message:
+                      "gdrive token database is broken :( Please report this!"
+                  }
+                ]
+              });
+            }
+          );
+        } else {
+          assignUserToken();
+        }
       }
     });
   } else {
@@ -223,7 +252,7 @@ exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
         Object.assign(
           {
             auth: auth,
-            pageSize: 28,
+            pageSize: 25,
             q: "'" + folderId + "' in parents",
             fields:
               "nextPageToken, files(id, name, mimeType, webViewLink, iconLink, thumbnailLink)"

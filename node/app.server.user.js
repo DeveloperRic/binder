@@ -1,5 +1,6 @@
 const uuidv4 = require("uuid/v4");
 const mongodb = require("./app.server.mongodb.js");
+const sdb = require("./app.server.source");
 
 const USERS_COL_NAME = "user.users";
 const USER_SESSIONS_COL_NAME = "user.sessions";
@@ -218,20 +219,16 @@ exports.getNavigation = function(uid, onSuccess, onFail) {
   this.getUserWithUID(
     uid,
     user => {
-      if (user.connectedSources.includes("gdrive")) {
-        nav.push({
-          source: "gdrive",
-          folder: "root",
-          text: "Google Drive"
-        });
-      }
-      if (user.connectedSources.includes("onedrive")) {
-        nav.push({
-          source: "onedrive",
-          folder: "root",
-          text: "Onedrive"
-        });
-      }
+      sdb.sources.forEach(source => {
+        if (user.connectedSources.includes(source.id)) {
+          var navItem = {
+            source: source.id,
+            folder: "root",
+            text: source.name
+          };
+          nav.push(navItem);
+        }
+      });
       onSuccess(nav);
     },
     () => {

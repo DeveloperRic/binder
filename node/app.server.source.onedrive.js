@@ -9,7 +9,7 @@ const MICROSOFT_GRAPH_DOMAIN = "https://graph.microsoft.com/v1.0";
 
 var app_secret;
 
-// If modifying a user's scope, delete their credentials from onedrive.credentials.json.
+// If modifying a user's scope, delete their credentials from database.
 const SCOPE_LEVELS = [
   "user.read files.read.all",
   "user.read files.readwrite.all"
@@ -22,12 +22,9 @@ exports.init = function() {
     (err, content) => {
       if (err) {
         if (err.code == "ENOENT") {
-          return console.log("Couldn't find onedrive client secret!");
+          return console.log("Couldn't find onedrive app secret!");
         } else {
-          return console.log(
-            "Error loading onedrive client secret file: ",
-            err
-          );
+          return console.log("Error loading onedrive app secret file: ", err);
         }
       }
       app_secret = JSON.parse(content);
@@ -96,22 +93,18 @@ exports.beginAuthorize = function(
         udb.getUserWithUID(
           uid,
           user => {
-            var url =
+            onPrompt(
               "https://login.microsoftonline.com/common/oauth2/v2.0/authorize" +
-              "?client_id=" +
-              app_secret.client_id +
-              "&response_type=code" +
-              "&redirect_uri=" +
-              encodeURIComponent(
-                "https://binder-211420.appspot.com/connect/onedrive"
-              ) +
-              // "&redirect_uri=" +
-              // encodeURIComponent("http://localhost:8080/connect/onedrive") +
-              "&scope=" +
-              encodeURIComponent(
-                "offline_access " + SCOPE_LEVELS[user.accessLevel]
-              );
-            onPrompt(url);
+                "?client_id=" +
+                app_secret.client_id +
+                "&response_type=code" +
+                "&redirect_uri=" +
+                encodeURIComponent(app_secret.redirect_uris[0]) +
+                "&scope=" +
+                encodeURIComponent(
+                  "offline_access " + SCOPE_LEVELS[user.accessLevel]
+                )
+            );
           },
           mongodbError => {
             if (mongodbError) {
@@ -168,7 +161,7 @@ function refreshAccessToken(uid, onSuccess, onFail) {
       );
     },
     () => {
-      failHandler(
+      failParser(
         500,
         "onedrive token database is broken :( Please report this!",
         onFail
@@ -215,7 +208,7 @@ function sendAuthorizationRequest(uid, authOptions, onSuccess, onFail) {
 
 function unAuthorize(uid, onSuccess, onFail) {
   setUserToken(uid, null, onSuccess, () => {
-    failHandler(500, "Couldn't disconnect user's onedrive", onFail);
+    failParser(500, "Couldn't disconnect user's onedrive", onFail);
   });
 }
 
@@ -226,7 +219,7 @@ exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
   if (folderId == "root") {
     requestUrl = "/drive/root/children";
   }
-  requestUrl += "?select=id,name,folder,webUrl,size&top=28";
+  requestUrl += "?select=id,name,folder,webUrl,size&top=25";
   if (params) {
     requestUrl +=
       "&" +
@@ -275,7 +268,7 @@ exports.getFileContent = function(uid, fileId, onSuccess, onFail) {
 
 exports.search = function(uid, query, params, onSuccess, onFail) {
   var requestUrl = "/me/drive/root/search(q='" + query + "')";
-  requestUrl += "?select=id,name,folder,webUrl,size,searchResult&top=28";
+  requestUrl += "?select=id,name,folder,webUrl,size,searchResult&top=25";
   if (params) {
     requestUrl +=
       "&" +

@@ -1,12 +1,11 @@
 const MongoClient = require("mongodb").MongoClient;
-const assert = require("assert");
 
 const url = "mongodb://admin:78nZsaOaA24d@ds121382.mlab.com:21382/binder";
 const dbName = "binder";
 
 var mongodb;
 
-exports.connect = function() {
+exports.connect = function(onSuccess, onFail) {
   // open the connection to the binder MongoDB server
   MongoClient.connect(
     url,
@@ -14,10 +13,11 @@ exports.connect = function() {
       useNewUrlParser: true
     },
     function(err, client) {
-      assert.equal(null, err);
+      if (err) return onFail(err);
       // create a new database instance
       mongodb = client.db(dbName);
       console.log("Successfully connected to MongoDB server");
+      onSuccess();
     }
   );
 };
@@ -75,21 +75,19 @@ exports.upsertDocument = function(
   onSuccess,
   onFail
 ) {
-  mongodb
-    .collection(collectionName)
-    .updateOne(
-      query,
-      // { $set: $set, $setOnInsert: $setOnInsert }
-      { $set: $set },
-      { upsert: true },
-      function(err, result) {
-        if (err) {
-          console.error(err);
-          return onFail(err, result);
-        }
-        onSuccess(result);
+  mongodb.collection(collectionName).updateOne(
+    query,
+    // { $set: $set, $setOnInsert: $setOnInsert }
+    { $set: $set },
+    { upsert: true },
+    function(err, result) {
+      if (err) {
+        console.error(err);
+        return onFail(err, result);
       }
-    );
+      onSuccess(result);
+    }
+  );
 };
 
 exports.removeDocument = function(collectionName, query, onSuccess, onFail) {

@@ -4,11 +4,12 @@
       <div class="label">
         <div class="label-text">
           <div class="pages">
-            <a class="page" ng-click="openFolder('all', 'root')">Files</a>
+            <a class="page" ng-href="/files?sourceId={{currentFolderSource}}&folderId=root">{{currentFolderSourceName}}</a>
             <a class="page" ng-repeat="page in pageStack" ng-click="onFileClick(page)"> / {{page.dat.name}}</a>
           </div>
           <div class="invisible label-floor"></div>
         </div>
+        <img class="currentFolderSource" ng-if="currentFolderSource=='dropbox'" src="../css/img/dropbox_lockup.png">
         <img class="currentFolderSource" ng-if="currentFolderSource=='gdrive'" src="../css/img/gdrive_lockup.png">
         <img class="currentFolderSource" ng-if="currentFolderSource=='onedrive'" src="../css/img/onedrive_lockup.png">
       </div>
@@ -77,7 +78,10 @@
           </div>
         </div>
         <div class="tile-bottom">
-          <img src="../css/img/gdrive_icon_small_20.png" ng-if="file.source=='gdrive'">
+          <img src="../css/img/dropbox_icon.png" ng-if="file.source=='dropbox' && currentFolderSource != 'all'">
+          <img src="../css/img/dropbox_lockup.png" ng-if="file.source=='dropbox' && currentFolderSource == 'all'">
+          <img src="../css/img/gdrive_icon_small_20.png" ng-if="file.source=='gdrive' && currentFolderSource != 'all'">
+          <img src="../css/img/gdrive_lockup.png" ng-if="file.source=='gdrive' && currentFolderSource == 'all'">
           <img src="../css/img/onedrive_lockup.png" ng-if="file.source=='onedrive'">
         </div>
       </div>
@@ -88,7 +92,9 @@
       <div class="file-thumbnail-text" ng-if="detailsFile.source == 'gdrive' && user.accessLevel == 0">
         <span class="text-muted">File thumbnails require extended permissions</span>
         <br/>
-        <a class="file-thumbnail-text-link text-color-accent" href="/account#accessLevels">Click here to give Binder more access</a>
+        <a class="file-thumbnail-text-link text-color-accent" href="/account#accessLevels">Click here to give Binder more
+          access
+        </a>
       </div>
       <div class="file-thumbnail-text" ng-if="user.accessLevel != 0 && !detailsFile.thumbnailLink">
         <span class="text-muted">This file doesn't have a thumbnail associated.</span>
@@ -105,7 +111,7 @@
           </div>
         </div>
         <h4>{{detailsFile.dat.description}}</h4>
-        <span class="version text-muted" ng-show="detailsFile.versionNumber && detailsFile.dat.version != 0">Version: {{detailsFile.versionNumber}}</span>
+        <span class="version text-muted" ng-if="!!detailsFile.versionNumber && detailsFile.dat.version != 0">Version: {{detailsFile.versionNumber}}</span>
       </div>
       <div class="file-info-audio" ng-if="detailsFile.dat.audio">
         <audio id="fileInfoAudio" preload="none" controls>
@@ -114,7 +120,7 @@
       </div>
       <div class="file-info-properties">
         Size: {{formatFileSize(detailsFile.dat.size)}}
-        <div class="modified" ng-show="detailsFile.versionNumber">
+        <div class="modified" ng-if="!!detailsFile.versionNumber">
           <span class="modified-time">Modified: {{formatFileModifiedTime(detailsFile.lastModified)}}</span>
           <span class="modified-by text-muted"> by: {{detailsFile.lastModifiedBy}}</span>
         </div>

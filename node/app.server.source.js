@@ -1,6 +1,7 @@
 Source = require("../model/app.model.source");
 const gdrive = require("./app.server.source.gdrive");
 const onedrive = require("./app.server.source.onedrive");
+const dropbox = require("./app.server.source.dropbox");
 
 exports.sources = [
   new Source("gdrive", "Google Drive"),
@@ -21,6 +22,7 @@ exports.getSource = function(sourceId) {
 
 gdrive.init();
 onedrive.init();
+dropbox.init();
 
 exports.beginConnect = function(
   sourceId,
@@ -39,6 +41,9 @@ exports.beginConnect = function(
       break;
     case "onedrive365":
       return 501;
+    case "dropbox":
+      dropbox.beginAuthorize(uid, forceUpdate, onPrompt, onSuccess, onFail);
+      break;
 
     default:
       return 400;
@@ -53,6 +58,9 @@ exports.finishConnect = function(sourceId, uid, code, onSuccess, onFail) {
       break;
     case "onedrive":
       onedrive.finishAuthorize(uid, code, onSuccess, onFail);
+      break;
+    case "dropbox":
+      dropbox.finishAuthorize(uid, code, onSuccess, onFail);
       break;
 
     default:
@@ -69,6 +77,9 @@ exports.disconnect = function(sourceId, uid, onSuccess, onFail) {
     case "onedrive":
       onedrive.unAuthorize(uid, onSuccess, onFail);
       break;
+    case "dropbox":
+      dropbox.unAuthorize(uid, onSuccess, onFail);
+      break;
 
     default:
       return 400;
@@ -81,26 +92,22 @@ exports.updateAccessLevels = function(uid, onComplete) {
   var failedSources = [];
   var checkComplete = function() {
     completedCount++;
-    if (completedCount == 2) {
+    if (completedCount == 3) {
       onComplete(failedSources);
     }
   };
-  gdrive.resetUserToken(
-    uid,
-    checkComplete,
-    () => {
-      failedSources.push("gdrive");
-      checkComplete();
-    }
-  );
-  onedrive.resetUserToken(
-    uid,
-    checkComplete,
-    () => {
-      failedSources.push("onedrive");
-      checkComplete();
-    }
-  );
+  gdrive.resetUserToken(uid, checkComplete, () => {
+    failedSources.push("gdrive");
+    checkComplete();
+  });
+  onedrive.resetUserToken(uid, checkComplete, () => {
+    failedSources.push("onedrive");
+    checkComplete();
+  });
+  dropbox.resetUserToken(uid, checkComplete, () => {
+    failedSources.push("dropbox");
+    checkComplete();
+  });
 };
 
 exports.listFiles = function(
@@ -143,12 +150,22 @@ exports.listFiles = function(
       );
       break;
 
+    case "dropbox":
+      dropbox.listFiles(
+        uid,
+        folderId,
+        ({ entries }) => {
+          entries.forEach(file => {
+            allFiles.push({ source: "dropbox", dat: file });
+          });
+          onSuccess(allFiles);
+        },
+        onFail
+      );
+      break;
+
     default:
-      onFail({
-        errors: [
-          { code: 400, message: "Sourceid (" + sourceId + ") is invalid" }
-        ]
-      });
+      failParser(400, "Sourceid (" + sourceId + ") is invalid", onFail);
       return;
   }
 };
@@ -178,11 +195,7 @@ exports.getFileMetadata = function(
       break;
 
     default:
-      onFail({
-        errors: [
-          { code: 400, message: "Sourceid (" + sourceId + ") is invalid" }
-        ]
-      });
+      failParser(400, "Sourceid (" + sourceId + ") is invalid", onFail);
       return;
   }
 };
@@ -231,6 +244,20 @@ exports.search = function(uid, sourceId, query, params, onSuccess, onFail) {
       );
       break;
 
+    case "dropbox":
+      dropbox.search(
+        uid,
+        query,
+        ({ matches }) => {
+          matches.forEach(match => {
+            allFiles.push({ source: "dropbox", dat: match.metadata });
+          });
+          onSuccess(allFiles);
+        },
+        onFail
+      );
+      break;
+
     default:
       onFail({
         errors: [
@@ -240,3 +267,30 @@ exports.search = function(uid, sourceId, query, params, onSuccess, onFail) {
       return;
   }
 };
+
+exports.getFileContent = function(uid, sourceId, fileId, onSuccess, onFail) {
+  switch (sourceId) {
+    case "onedrive":
+      onedrive.getFileContent(uid, fileId, onSuccess, onFail);
+      break;
+
+    case "dropbox":
+      dropbox.getContentLink(uid, fileId, onSuccess, onFail);
+      break;
+
+    default:
+      failParser(400, "Sourceid (" + sourceId + ") is invalid", onFail);
+      return;
+  }
+};
+
+function failParser(statusCode, message, failHandler) {
+  return failHandler({
+    errors: [
+      {
+        code: statusCode,
+        message: message
+      }
+    ]
+  });
+}

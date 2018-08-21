@@ -1,14 +1,16 @@
-<div id="welcomeStage" class="stage center">
-	<div class="create-account" ng-show="!userFound">
+<div id="welcomeStage" class="stage">
+	<div class="title">Binder</div>
+	<div class="create-account background-secondary drop-shadow" ng-show="!userFound">
 		<h1>Hi! This is Binder!</h1>
 		<h2>Get started by creating an account</h2>
 		<form name="createAccountForm">
-			<table class="center-content background-primary">
+			<table class="center-content">
 				<tr>
 					<td>Email Address</td>
 					<td>
 						<div class="input">
-							<input type="email" name="email" ng-model="email" required placeholder="email@example.com" />
+							<input type="email" name="email" ng-model="email" required placeholder="email@example.com" ng-blur="onEmailExit()" ng-class="{'invalid-input': emailInvalid}"
+							/>
 							<div class="label-floor"></div>
 						</div>
 					</td>
@@ -17,7 +19,8 @@
 					<td>Password</td>
 					<td>
 						<div class="input">
-							<input type="password" name="password" ng-model="password" required />
+							<input type="password" name="password" ng-model="password" required ng-blur="onPasswordExit()" ng-class="{'invalid-input': passwordInvalid}"
+							/>
 							<div class="label-floor"></div>
 						</div>
 					</td>
@@ -26,24 +29,21 @@
 					<td>Confirm password</td>
 					<td>
 						<div class="input">
-							<input type="password" name="passwordconfirm" ng-model="passwordconfirm" required />
+							<input type="password" name="passwordconfirm" ng-model="passwordconfirm" required ng-blur="onPasswordExit()" ng-class="{'invalid-input': passwordInvalid}"
+							/>
 							<div class="label-floor"></div>
 						</div>
 					</td>
 				</tr>
-				<tr class="center-content">
-					<td>
-						<div class="error" ng-show="error.exists">{{error.message}}</div>
-					</td>
-				</tr>
-				<tr class="center-content">
-					<td class="button-row">
-						<button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="createAccount()">Create Account</button>
-						or
-						<button type="submit" class="btn go-to-login text-color-primary background-primary" ng-click="login()">Go to Login</button>
-					</td>
-				</tr>
 			</table>
+			<div class="error" ng-show="error.exists" ng-repeat="line in error.message">{{line}}</div>
+			<div class="button-row center-content">
+				<button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="createAccount()">Create
+					Account
+				</button>
+				or
+				<button type="submit" class="btn go-to-login text-color-primary background-primary" ng-click="login()">Go to Login</button>
+			</div>
 		</form>
 	</div>
 </div>

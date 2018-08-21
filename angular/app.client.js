@@ -112,14 +112,28 @@ client.run(function(
       $cookies.remove("app.client.data.loggedInUser");
     }
     if ($rootScope.loggedInUser) {
-      $.post("api/user/logoutuser", { uid: $rootScope.loggedInUser });
+      $.post("api/user/" + $rootScope.loggedInUser.uid + "/logout");
       $rootScope.loggedInUser = null;
-      $window.location.href = "/login";
+      $window.location.href = "/";
     }
   };
   $rootScope.emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   $rootScope.validateEmail = function(email) {
     return $rootScope.emailPattern.test(String(email).toLowerCase());
+  };
+  $rootScope.validatePassword = function(password, passwordconfirm) {
+    if (password == "") {
+      return "You must enter a password.";
+    } else if (password.length < 8) {
+      return new Array(
+        "Your password must be at least 8 characters long.",
+        "This is to help protect your files from unauthorised access."
+      );
+    } else if (password != passwordconfirm) {
+      return "Your passwords do not match.";
+    } else {
+      return null;
+    }
   };
   $rootScope.tempSourceList = [];
   $rootScope.sources = function(onSuccess, onFail) {
@@ -202,30 +216,64 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
     }
   );
 
+  $rootScope.hideNavBar = true;
+
   $scope.userFound = false;
   $scope.email = "";
   $scope.password = "";
   $scope.passwordconfirm = "";
   $scope.error = {
     exists: false,
-    message: ""
+    message: []
   };
   $scope.postError = function(message) {
     $scope.error.exists = true;
-    $scope.error.message = message;
+    $scope.error.message.length = 0;
+    if (typeof message != "string") {
+      message.forEach(line => $scope.error.message.push(line));
+    } else {
+      $scope.error.message = [message];
+    }
+  };
+  $scope.onEmailExit = function() {
+    $scope.emailInvalid = false;
+    $scope.error.exists = false;
+    if (!$rootScope.validateEmail($scope.email)) {
+      $scope.emailInvalid = true;
+      $scope.postError("Your email address is in the wrong format.");
+    }
+  };
+  $scope.onPasswordExit = function() {
+    $scope.error.exists = false;
+    var passwordMessage = $rootScope.validatePassword(
+      $scope.password,
+      $scope.passwordconfirm
+    );
+    $scope.passwordInvalid = !!passwordMessage;
+    if ($scope.passwordInvalid) {
+      $scope.postError(passwordMessage);
+    }
   };
   $scope.createAccount = function() {
     $scope.error.exists = false;
+    $scope.emailInvalid = false;
+    $scope.passwordInvalid = false;
     if (!$rootScope.validateEmail($scope.email)) {
+      $scope.emailInvalid = true;
       $scope.postError("Your email address is in the wrong format.");
       return;
     }
-    if ($scope.password != $scope.passwordconfirm) {
-      $scope.postError("Your passwords don't match.");
+    var passwordMessage = $rootScope.validatePassword(
+      $scope.password,
+      $scope.passwordconfirm
+    );
+    $scope.passwordInvalid = !!passwordMessage;
+    if ($scope.passwordInvalid) {
+      $scope.postError(passwordMessage);
       return;
     }
     var expiration = $rootScope.userSessionExpiration();
-    $.post("api/user/newuser", {
+    $.post("api/user/new_user", {
       email: $scope.email,
       password: $scope.password,
       expiration: expiration
@@ -250,7 +298,8 @@ client.controller("loginCtrl", function(
   $scope,
   $rootScope,
   $routeParams,
-  $window
+  $window,
+  $interval
 ) {
   if ($routeParams.fromWelcome) {
     $scope.canReturn = true;
@@ -259,7 +308,7 @@ client.controller("loginCtrl", function(
     };
   }
 
-  $scope.canReturn = false;
+  $rootScope.hideNavBar = true;
 
   $scope.email = "";
   $scope.password = "";
@@ -271,14 +320,25 @@ client.controller("loginCtrl", function(
     $scope.error.exists = true;
     $scope.error.message = message;
   };
+  $scope.onEmailExit = function() {
+    $scope.emailInvalid = false;
+    $scope.error.exists = false;
+    if (!$rootScope.validateEmail($scope.email)) {
+      $scope.emailInvalid = true;
+      $scope.postError("Your email address is in the wrong format.");
+    }
+  };
   $scope.login = function() {
     $scope.error.exists = false;
     if (!$rootScope.validateEmail($scope.email)) {
       $scope.postError("Your email address is in the wrong format.");
       return;
     }
+    if ($scope.password == "") {
+      return;
+    }
     var expiration = $rootScope.userSessionExpiration();
-    $.post("api/user/loginuser", {
+    $.post("api/user/login_user", {
       email: $scope.email,
       password: $scope.password,
       expiration: expiration.toUTCString()
@@ -297,6 +357,13 @@ client.controller("loginCtrl", function(
       })
       .fail(function(xhr, status, error) {
         $scope.postError("Incorrect username or password.");
+        $interval(
+          () => {
+            $scope.error.exists = false;
+          },
+          5000,
+          1
+        );
         $scope.$apply();
       });
   };
@@ -354,7 +421,7 @@ client.controller("connectCtrl", function(
   $scope.onSelect = function(sourceId) {
     $scope.selected = $rootScope.getSource(sourceId);
     $http
-      .post("api/source/" + sourceId + "/beginconnect", {
+      .post("api/source/" + sourceId + "/begin_connect", {
         uid: $rootScope.user().uid,
         forceUpdate: $scope.forceUpdate.includes(sourceId)
       })
@@ -383,7 +450,7 @@ client.controller("connectCtrl", function(
   $scope.authcode = "";
   $scope.onResponse = () => {
     $http
-      .post("api/source/" + $scope.selected.id + "/finishconnect", {
+      .post("api/source/" + $scope.selected.id + "/finish_connect", {
         uid: $rootScope.user().uid,
         code: $scope.authcode
       })
@@ -448,7 +515,7 @@ client.controller("connectCallbackCtrl", function(
           },
           () => {}
         );
-        $.post("api/source/" + sourceId + "/finishconnect", {
+        $.post("api/source/" + sourceId + "/finish_connect", {
           uid: user.uid,
           code: $routeParams.code
         })
@@ -508,6 +575,12 @@ client.controller("dashboardCtrl", function(
           $scope.requestStatus[key] = key == status;
         }
       }
+    }
+  };
+  $rootScope.searching = {
+    searchQuery: "",
+    search: function(query) {
+      $location.path("/files/search").search({ q: query });
     }
   };
   $rootScope.user(
@@ -665,9 +738,11 @@ client.controller("filesCtrl", function(
     }
   };
   $scope.files = [];
+  $scope.currentFolderSourceName = "Files";
   $scope.currentFolderSource = "all";
   $scope.unifySourceFile = function(sourceId, fileDat) {
     var file = {
+      id: fileDat.id,
       isFolder: false,
       source: sourceId,
       dat: fileDat
@@ -681,21 +756,26 @@ client.controller("filesCtrl", function(
       case "onedrive":
         file.isFolder = fileDat.folder ? true : false;
         break;
+
+      case "dropbox":
+        file.id = fileDat.path_display;
+        file.isFolder = fileDat[".tag"] == "folder";
+        break;
     }
     return file;
   };
   $scope.getFileParents = function(sourceId, fileId, keys) {
-    $.get("api/source/" + sourceId + "/" + fileId + "/getfilemetadata", {
+    $.get("api/source/" + sourceId + "/" + fileId + "/get_metadata", {
       uid: $rootScope.user().uid,
       keys: keys
     }).done(parent => {
-      function func(id) {
-        $.get("api/source/" + sourceId + "/" + id + "/getfilemetadata", {
+      var getNextParent = function(id) {
+        $.get("api/source/" + sourceId + "/" + id + "/get_metadata", {
           uid: $rootScope.user().uid,
           keys: keys
         }).done(parent => {
           if (sourceId == "onedrive" && !parent.parentReference.id) {
-            parent.name = "OneDrive";
+            parent.name = "My OneDrive";
           }
           $scope.pageStack.splice(
             0,
@@ -705,18 +785,18 @@ client.controller("filesCtrl", function(
           $scope.$apply();
         });
         $scope.getFileParents(sourceId, id, keys);
-      }
+      };
 
       if (sourceId == "gdrive" && parent.parents) {
         parent.parents.forEach(parentId => {
-          func(parentId);
+          getNextParent(parentId);
         });
       } else if (sourceId == "onedrive" && parent.parentReference.id) {
-        func(parent.parentReference.id);
+        getNextParent(parent.parentReference.id);
       }
     });
   };
-  $scope.openFolder = function(sourceId, folderId, replace) {
+  $scope.openFolder = function(sourceId, folderId, replace, batchRequest) {
     $scope.requestStatus.setStatus("loadingChildren");
     if (sourceId == "all") {
       $rootScope.sources(
@@ -724,10 +804,9 @@ client.controller("filesCtrl", function(
           $scope.files.length = 0;
           sources.forEach(source => {
             if ($scope.user.connectedSources.includes(source.id)) {
-              $scope.openFolder(source.id, folderId, replace);
+              $scope.openFolder(source.id, folderId, replace, true);
             }
           });
-          $scope.currentFolderSource = "all";
           $location.search("sourceId", null);
           $location.search("folderId", null);
           $scope.$apply();
@@ -742,7 +821,8 @@ client.controller("filesCtrl", function(
       return;
     }
     $scope.currentFolder = folderId;
-    $scope.currentFolderSource = sourceId;
+    $scope.currentFolderSource = batchRequest ? "all" : sourceId;
+    var folderIndex = 0;
     if (folderId != "root") {
       $scope.files.length = 0;
       $location.search({
@@ -753,96 +833,72 @@ client.controller("filesCtrl", function(
     if (replace) {
       $location.replace();
     }
-    $.get("api/source/" + sourceId + "/" + folderId + "/children", {
+    var requestFolderUrl = "/" + folderId;
+    var requestParams = {
       uid: $rootScope.user().uid,
       params: {
         orderBy: $scope.sorting.orderByStr(sourceId)
       }
-    })
+    };
+    if (sourceId == "dropbox") {
+      requestFolderUrl = "";
+      requestParams = Object.assign(requestParams, { folderPath: folderId });
+    }
+    $.get("api/source/" + sourceId + requestFolderUrl + "/files", requestParams)
       .done(function(list) {
-        var folderIndex = $scope.files.length;
         list.forEach(file => {
           var fileWrapper = $scope.unifySourceFile(file.source, file.dat);
-          if (sourceId == "gdrive") {
-            $scope.files.push(fileWrapper);
-          } else if (sourceId == "onedrive") {
+          // sort the files by folder for sources that don't enable that kind of sorting
+          if (sourceId != "gdrive" || $scope.currentFolderSource == "all") {
             if (fileWrapper.isFolder) {
               $scope.files.splice(folderIndex, 0, fileWrapper);
               folderIndex++;
             } else {
               $scope.files.push(fileWrapper);
             }
+          } else {
+            $scope.files.push(fileWrapper);
           }
         });
         $scope.sorting.criteriaClickCallback = () => {
           $scope.openFolder(
             $scope.currentFolderSource,
             $scope.currentFolder,
-            true
+            true,
+            batchRequest
           );
         };
+        if (sourceId == "dropbox" && $scope.files.length > 0) {
+          $scope.pageStack.length = 0;
+          var path = $scope.files[0].id + "";
+          if (path.lastIndexOf("/") > 0) {
+            var pageNames = path
+              .substr(1, path.lastIndexOf("/") - 1)
+              .split("/");
+            var updatedPath = "";
+            for (let i in pageNames) {
+              updatedPath += "/" + pageNames[i];
+              $scope.pageStack.push(
+                $scope.unifySourceFile(sourceId, {
+                  ".tag": "folder",
+                  path_display: updatedPath,
+                  name: pageNames[i]
+                })
+              );
+            }
+          }
+        }
         $scope.requestStatus.setStatus("");
         $scope.$apply();
-        var index = -1;
-        $scope.files.forEach(file => {
-          index++;
-          if (file.source == "gdrive") {
-            $interval(
-              () => {
-                $.get("api/source/gdrive/" + file.dat.id + "/getfilemetadata", {
-                  uid: $rootScope.user().uid,
-                  keys: ["thumbnailLink"]
-                })
-                  .done(function(data) {
-                    file.dat = Object.assign(file.dat, data);
-                    file = Object.assign(file, {
-                      thumbnailLink: data.thumbnailLink
-                    });
-                    $scope.$apply();
-                  })
-                  .fail(function(xhr, status, error) {
-                    file.thumbnailLinkAlt = "Couldn't get file metadata";
-                    console.log(JSON.parse(xhr.responseText));
-                  });
-              },
-              150 * (index + 1),
-              1
-            );
-          } else if (file.source == "onedrive") {
-            $.get(
-              "api/source/onedrive/" + file.dat.id + "/collection/thumbnails",
-              {
-                uid: $rootScope.user().uid
-              }
-            )
-              .done(function(data) {
-                file.dat = Object.assign(file.dat, {
-                  thumbnails: data.value
-                });
-                // add another switch if a different source also separates collection calls
-                if (data.value) {
-                  try {
-                    file = Object.assign(file, {
-                      thumbnailLink: data.value[0].large.url
-                    });
-                    $scope.$apply();
-                  } catch (error) {}
-                }
-              })
-              .fail(function(xhr, status, error) {
-                file.thumbnailLinkAlt = "Couldn't get file thumbnail";
-                console.log(JSON.parse(xhr.responseText));
-              });
-          }
-        });
+        $scope.qualifyFileList(sourceId);
       })
       .fail(function(xhr, status, error) {
         $scope.requestStatus.setStatus("errorLoading");
         $scope.$apply();
         console.log(xhr.responseText);
       });
-    $scope.pageStack.length = 0;
-    if (folderId != "root") {
+    if (folderId != "root" && sourceId != "dropbox") {
+      $scope.pageStack.length = 0;
       var keys = ["name"];
       switch (sourceId) {
         case "gdrive":
@@ -853,7 +909,7 @@ client.controller("filesCtrl", function(
           keys.push("folder", "parentReference");
           break;
       }
-      $.get("api/source/" + sourceId + "/" + folderId + "/getfilemetadata", {
+      $.get("api/source/" + sourceId + "/" + folderId + "/get_metadata", {
         uid: $rootScope.user().uid,
         keys: keys
       }).done(currentFolder => {
@@ -869,16 +925,164 @@ client.controller("filesCtrl", function(
       });
     }
   };
+  $scope.qualifyFileList = function(sourceId) {
+    if (sourceId != "dropbox") {
+      var index = -1;
+      $scope.files.forEach(file => {
+        index++;
+        if (file.source == "gdrive") {
+          $interval(
+            () => {
+              $.get("api/source/gdrive/" + file.id + "/get_metadata", {
+                uid: $rootScope.user().uid,
+                keys: ["thumbnailLink"]
+              })
+                .done(function(data) {
+                  file.dat = Object.assign(file.dat, data);
+                  file = Object.assign(file, {
+                    thumbnailLink: data.thumbnailLink
+                  });
+                  $scope.$apply();
+                })
+                .fail(function(xhr, status, error) {
+                  file.thumbnailLinkAlt = "Couldn't get file metadata";
+                  console.log(JSON.parse(xhr.responseText));
+                });
+            },
+            150 * (index + 1),
+            1
+          );
+        } else if (file.source == "onedrive") {
+          $.get("api/source/onedrive/" + file.id + "/collection/thumbnails", {
+            uid: $rootScope.user().uid
+          })
+            .done(function(data) {
+              file.dat = Object.assign(file.dat, {
+                thumbnails: data.value
+              });
+              // add another switch if a different source also separates collection calls
+              if (data.value) {
+                try {
+                  file = Object.assign(file, {
+                    thumbnailLink: data.value[0].large.url
+                  });
+                  $scope.$apply();
+                } catch (error) {}
+              }
+            })
+            .fail(function(xhr, status, error) {
+              file.thumbnailLinkAlt = "Couldn't get file thumbnail";
+              console.log(JSON.parse(xhr.responseText));
+            });
+        }
+      });
+    } else {
+      var filePaths = [];
+      $scope.files.forEach(file => {
+        if (file.source == "dropbox") {
+          filePaths.push(file.id);
+        }
+      });
+      if (filePaths.length > 0) {
+        $.get("/api/source/dropbox/thumbnails", {
+          uid: $rootScope.user().uid,
+          filePaths: filePaths
+        })
+          .done(function(entries) {
+            entries.forEach(entry => {
+              if (entry[".tag"] != "failure") {
+                var metadata = $scope.unifySourceFile(
+                  "dropbox",
+                  entry.metadata
+                );
+                for (let i in $scope.files) {
+                  if (
+                    $scope.files[i].source == "dropbox" &&
+                    $scope.files[i].id == metadata.id
+                  ) {
+                    $scope.files[i] = Object.assign(
+                      $scope.files[i],
+                      Object.assign(metadata, {
+                        thumbnailLink:
+                          "data:image/gif;base64," + entry.thumbnail
+                      })
+                    );
+                    break;
+                  }
+                }
+              }
+            });
+            $scope.$apply();
+          })
+          .fail(function(xhr, status, error) {
+            $scope.files.forEach(file => {
+              if (file.source == "dropbox") {
+                file.thumbnailLinkAlt = "Couldn't get file thumbnail";
+              }
+            });
+            console.log(JSON.parse(xhr.responseText));
+          });
+      }
+      $scope.files.forEach(file => {
+        if (file.source == "dropbox" && !file.isFolder) {
+          file = Object.assign(file, {
+            versionNumber: "Unknown",
+            lastModified: file.dat.server_modified,
+            lastModifiedBy: "Unknown"
+          });
+          $.get("/api/source/dropbox/preview", {
+            uid: $rootScope.user().uid,
+            filePath: file.id
+          }).done(function(preview) {
+            file = Object.assign(file, {
+              preview: preview
+            });
+            $scope.$apply();
+          });
+          $.get("/api/source/dropbox/content", {
+            uid: $rootScope.user().uid,
+            filePath: file.id
+          })
+            .done(function(response) {
+              if (response[".tag"] != "failure") {
+                var metadata = $scope.unifySourceFile(
+                  "dropbox",
+                  response.metadata
+                );
+                file = Object.assign(
+                  file,
+                  Object.assign(metadata, {
+                    streamURL: response.link
+                  })
+                );
+                file.dat = Object.assign(file.dat, {
+                  audio: new RegExp("[.mp3]?[.wav]?[.aac]?$").test(
+                    file.dat.path_lower
+                  )
+                });
+                $scope.$apply();
+              }
+            })
+            .fail(function(xhr, status, error) {
+              console.log(JSON.parse(xhr.responseText));
+            });
+        }
+      });
+    }
+  };
   $rootScope.searching = {
     searchQuery: "",
     search: function(query) {
+      query = query.replace("'", "");
       if ($location.path() != "/files/search") {
         $location.path("/files/search").search({ q: query });
         return;
       } else {
         $location.search({ q: query });
+        $location.replace();
       }
       $rootScope.searching.searchQuery = query;
+      $scope.currentFolderSourceName = "Search results";
       $scope.requestStatus.setStatus("searching");
       $rootScope.sources(
         sources => {
@@ -905,6 +1109,7 @@ client.controller("filesCtrl", function(
                   };
                   $scope.requestStatus.setStatus("");
                   $scope.$apply();
+                  $scope.qualifyFileList(source.id);
                 })
                 .fail(function(xhr, status, error) {
                   $scope.requestStatus.setStatus("errorLoading");
@@ -933,7 +1138,9 @@ client.controller("filesCtrl", function(
       $scope.user = user;
       $.get("api/user/" + user.uid + "/navigation").done(navigation => {
         $rootScope.navButtons = navigation;
-        $scope.$apply();
+        try {
+          $scope.$apply();
+        } catch (error) {}
       });
       var sortOrder = $cookies.getObject("app.client.data.files.orderBy");
       if (sortOrder) {
@@ -954,6 +1161,18 @@ client.controller("filesCtrl", function(
       });
       if ($routeParams.folderId) {
         $scope.openFolder($routeParams.sourceId, $routeParams.folderId, true);
+        $rootScope.sources(
+          sources => {
+            for (let i in sources) {
+              if (sources[i].id == $routeParams.sourceId) {
+                $scope.currentFolderSourceName = sources[i].name;
+                $scope.$apply();
+                break;
+              }
+            }
+          },
+          () => {}
+        );
       } else if ($location.path() == "/files/search") {
         $rootScope.searching.search($routeParams.q);
       } else {
@@ -970,7 +1189,7 @@ client.controller("filesCtrl", function(
 
   $scope.onFileClick = function(file) {
     if (file.isFolder) {
-      $scope.openFolder(file.source, file.dat.id);
+      $scope.openFolder(file.source, file.id);
     } else {
       $scope.openFile(file);
     }
@@ -983,6 +1202,12 @@ client.controller("filesCtrl", function(
         break;
       case "onedrive":
         $window.open(file.dat.webUrl, target);
+        break;
+      case "dropbox":
+        $window.alert(
+          "Dropbox does not allow you to view files online from a external source.\n" +
+            "However, you can still download the file by right-clicking and selecting 'Download'"
+        );
         break;
     }
   };
@@ -998,46 +1223,35 @@ client.controller("filesCtrl", function(
       {
         text: "Explore",
         displayed: file.isFolder,
-        click: function($itemScope, $event, modelValue, text, $li) {
+        click: function() {
           $scope.onFileClick(file);
         }
       },
       {
         text: "Open in new tab",
         displayed: !file.isFolder,
-        click: function($itemScope, $event, modelValue, text, $li) {
+        click: function() {
           $scope.openFile(file, true);
         }
       },
       {
         text: "Details",
         displayed: !file.isFolder,
-        click: function($itemScope, $event, modelValue, text, $li) {
+        click: function($itemScope) {
           $scope.showFileDetails($scope.files[$itemScope.$index]);
         }
       },
       {
         text: "Download",
-        displayed: file.isFolder,
-        click: function() {
-          $.post("api/source/getfilemetadata", {
-            uid: $rootScope.user().uid,
-            fileId: file.dat.id,
-            keys: ["webContentLink"]
-          })
-            .done(function(data) {
-              $window.open(JSON.parse(data).webContentLink, "_blank");
-            })
-            .fail(function(xhr, status, error) {
-              $window.alert("Couldn't get download link");
-              console.log(JSON.parse(xhr.responseText));
-            });
+        click: function($itemScope) {
+          $scope.downloadFile($scope.files[$itemScope.$index]);
         }
       }
     ];
   };
   $scope.detailsFile = null;
   $scope.showFileDetails = function(detailsFile) {
+    console.log(detailsFile);
     $scope.detailsFile = detailsFile;
     document.getElementById("fileDetailsPane").classList.remove("ng-hide");
 
@@ -1062,8 +1276,8 @@ client.controller("filesCtrl", function(
       "api/source/" +
         detailsFile.source +
         "/" +
-        detailsFile.dat.id +
-        "/getfilemetadata",
+        detailsFile.id +
+        "/get_metadata",
       {
         uid: $rootScope.user().uid,
         keys: keys
@@ -1100,10 +1314,7 @@ client.controller("filesCtrl", function(
     if (detailsFile.source == "onedrive") {
       collections.forEach(collection => {
         $.get(
-          "api/source/onedrive/" +
-            detailsFile.dat.id +
-            "/collection/" +
-            collection,
+          "api/source/onedrive/" + detailsFile.id + "/collection/" + collection,
           {
             uid: $rootScope.user().uid
           }
@@ -1168,9 +1379,9 @@ client.controller("filesCtrl", function(
     }
   };
   $scope.toggleFileStarred = function(file) {
-    $.post("api/source/updatefilemetadata", {
+    $.post("api/source/gdrive/" + file.id + "/update_metadata", {
       uid: $rootScope.user().uid,
-      fileId: file.dat.id,
+      fileId: file.id,
       metadata: {
         starred: true
       }
@@ -1183,6 +1394,59 @@ client.controller("filesCtrl", function(
       .fail(function(xhr, status, error) {
         console.log(JSON.parse(xhr.responseText));
       });
+  };
+  $scope.downloadFile = function(file) {
+    switch (file.source) {
+      case "gdrive":
+        $.post("api/source/get_metadata", {
+          uid: $rootScope.user().uid,
+          fileId: file.id,
+          keys: ["webContentLink"]
+        })
+          .done(function(data) {
+            $window.open(JSON.parse(data).webContentLink, "_blank");
+          })
+          .fail(function(xhr, status, error) {
+            $window.alert("Couldn't get download link");
+            console.log(JSON.parse(xhr.responseText));
+          });
+        break;
+      case "onedrive":
+        if (!!file.streamURL) {
+          $window.open(file.streamURL);
+        } else {
+          $.get("api/source/onedrive/" + file.id + "/get_metadata", {
+            uid: $rootScope.user().uid,
+            keys: ["malware", "@microsoft.graph.downloadUrl"]
+          })
+            .done(function(data) {
+              file.dat = Object.assign(file.dat, data);
+              if (data.malware) {
+                file = Object.assign(file, {
+                  streamURL: data["@microsoft.graph.downloadUrl"]
+                });
+                $window.open(file.streamURL);
+              } else {
+                $window.alert(
+                  "You may not download this file from Binder because it was found to contain malware."
+                );
+              }
+            })
+            .fail(function(xhr, status, error) {
+              $scope.detailsFile.thumbnailLinkAlt =
+                "Couldn't get file metadata";
+              console.log(JSON.parse(xhr.responseText));
+            });
+        }
+        break;
+      case "dropbox":
+        if (!file.isFolder) {
+          $window.open(file.streamURL);
+        } else {
+          $window.alert("Cannot download Dropbox folders");
+        }
+        break;
+    }
   };
 });
 
@@ -1253,7 +1517,7 @@ client.controller("accountCtrl", function(
         });
     } else {
       $http
-        .post("api/source/" + source.id + "/beginconnect", {
+        .post("api/source/" + source.id + "/begin_connect", {
           uid: $rootScope.user().uid,
           forceUpdate: false
         })
@@ -1277,7 +1541,7 @@ client.controller("accountCtrl", function(
   };
   $scope.setAccessLevel = function(newAccessLevel) {
     if ($rootScope.user().accessLevel != newAccessLevel) {
-      $.post("api/user/" + $rootScope.user().uid + "/setaccesslevel", {
+      $.post("api/user/" + $rootScope.user().uid + "/set_access_level", {
         newAccessLevel: newAccessLevel
       })
         .done(res => {
@@ -1308,7 +1572,7 @@ client.controller("accountCtrl", function(
     }
   };
   $scope.updateProfile = function() {
-    $.post("api/user/" + $rootScope.user().uid + "/updateprofile", {
+    $.post("api/user/" + $rootScope.user().uid + "/update_profile", {
       profile: {
         firstname: $scope.profile.firstname,
         lastname: $scope.profile.lastname
@@ -1330,7 +1594,7 @@ client.controller("accountCtrl", function(
     if ($scope.profile.email != $rootScope.user().email) {
       if ($scope.profile.password == $rootScope.user().password) {
         var oldEmailAddress = $rootScope.user().email;
-        $.post("api/user/" + $rootScope.user().uid + "/updateemail", {
+        $.post("api/user/" + $rootScope.user().uid + "/update_email", {
           email: $scope.profile.email
         }).done(user => {
           $rootScope.loggedInUser = user;
