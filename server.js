@@ -59,6 +59,7 @@ app.route("/api/user/new_user").post((req, res) => {
         user.uid,
         req.body.expiration,
         sessionKey => {
+          delete user.password;
           res.status(201).send({ sessionKey: sessionKey, user: user });
         },
         () => {
@@ -96,6 +97,7 @@ app.route("/api/user/login_user").post((req, res) => {
         user.uid,
         req.body.expiration,
         sessionKey => {
+          delete user.password;
           res.send({ sessionKey: sessionKey, user: user });
         },
         () => {
@@ -145,6 +147,7 @@ app.route("/api/user/:uid").get((req, res) => {
     req.params.uid,
     req.query.sessionKey,
     user => {
+      delete user.password;
       res.send(user);
     },
     (mongodbError, invalidSessionKey) => {
@@ -179,23 +182,29 @@ app.route("/api/user/:uid/update_email").post((req, res) => {
   if (
     !verifyParams(
       res,
-      ["params.uid", "body.email"],
+      ["params.uid", "body.newEmail", "body.password"],
       req.params.uid,
-      req.body.email
+      req.body.newEmail,
+      req.body.password
     )
   ) {
     return;
   }
-  udb.getUserWithUID(
+  udb.updateEmailAddress(
     req.params.uid,
+    req.body.newEmail,
+    req.body.password,
     user => {
+      delete user.password;
       res.send(user);
     },
-    mongodbError => {
+    (mongodbError, emailTaken) => {
       if (mongodbError) {
         res.sendStatus(500);
+      } else if (emailTaken) {
+        res.sendStatus(403);
       } else {
-        res.sendStatus(404);
+        res.sendStatus(401);
       }
     }
   );
@@ -216,6 +225,7 @@ app.route("/api/user/:uid/update_profile").post((req, res) => {
     req.params.uid,
     req.body.profile,
     user => {
+      delete user.password;
       res.send(user);
     },
     mongodbError => {
@@ -244,6 +254,7 @@ app.route("/api/user/:uid/set_access_level").post((req, res) => {
     req.body.newAccessLevel,
     user => {
       sdb.updateAccessLevels(req.params.uid, failedSources => {
+        delete user.password;
         res.send({ user: user, failedSources: failedSources });
       });
     },
@@ -506,7 +517,7 @@ app
     if (
       !verifyParams(
         res,
-        ["query.uid", "params.fileId","params.collection"],
+        ["query.uid", "params.fileId", "params.collection"],
         req.query.uid,
         req.params.fileId,
         req.params.collection

@@ -97,7 +97,7 @@ client.run(function(
               onSuccess($rootScope.loggedInUser);
             }
           })
-          .fail(function(xhr, status, error) {
+          .fail(function(xhr, textStatus, error) {
             if (onFail) {
               onFail(true);
             }
@@ -143,8 +143,8 @@ client.run(function(
         data.forEach(source => $rootScope.tempSourceList.push(source));
         onSuccess($rootScope.tempSourceList);
       })
-      .fail(function(xhr, status, error) {
-        onFail(xhr, status, error);
+      .fail(function(xhr, textStatus, error) {
+        onFail(xhr, textStatus, error);
       });
   };
   $rootScope.getSource = sourceid => {
@@ -171,7 +171,7 @@ client.run(function(
         );
         $location.replace();
       })
-      .fail(function(xhr, status, error) {
+      .fail(function(xhr, textStatus, error) {
         console.log(
           "Failed to extend user " +
             $rootScope.user.uid +
@@ -240,7 +240,7 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
     $scope.error.exists = false;
     if (!$rootScope.validateEmail($scope.email)) {
       $scope.emailInvalid = true;
-      $scope.postError("Your email address is in the wrong format.");
+      $scope.postError("Please enter a valid email address.");
     }
   };
   $scope.onPasswordExit = function() {
@@ -260,7 +260,7 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
     $scope.passwordInvalid = false;
     if (!$rootScope.validateEmail($scope.email)) {
       $scope.emailInvalid = true;
-      $scope.postError("Your email address is in the wrong format.");
+      $scope.postError("Please enter a valid email address.");
       return;
     }
     var passwordMessage = $rootScope.validatePassword(
@@ -284,7 +284,7 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
         $window.location.href = "/connect";
         $scope.$apply();
       })
-      .fail(function(xhr, status, error) {
+      .fail(function(xhr, textStatus, error) {
         $scope.postError("That email address is already being used.");
         $scope.$apply();
       });
@@ -325,13 +325,13 @@ client.controller("loginCtrl", function(
     $scope.error.exists = false;
     if (!$rootScope.validateEmail($scope.email)) {
       $scope.emailInvalid = true;
-      $scope.postError("Your email address is in the wrong format.");
+      $scope.postError("Please enter a valid email address.");
     }
   };
   $scope.login = function() {
     $scope.error.exists = false;
     if (!$rootScope.validateEmail($scope.email)) {
-      $scope.postError("Your email address is in the wrong format.");
+      $scope.postError("Please enter a valid email address.");
       return;
     }
     if ($scope.password == "") {
@@ -355,7 +355,7 @@ client.controller("loginCtrl", function(
         }
         $scope.$apply();
       })
-      .fail(function(xhr, status, error) {
+      .fail(function(xhr, textStatus, error) {
         $scope.postError("Incorrect username or password.");
         $interval(
           () => {
@@ -525,7 +525,7 @@ client.controller("connectCallbackCtrl", function(
             $scope.isConnected = true;
             $scope.$apply();
           })
-          .fail((xhr, status, error) => {
+          .fail((xhr, textStatus, error) => {
             $scope.resultPending = false;
             console.log(xhr.responseText);
             $scope.$apply();
@@ -892,7 +892,7 @@ client.controller("filesCtrl", function(
         $scope.$apply();
         $scope.qualifyFileList(sourceId);
       })
-      .fail(function(xhr, status, error) {
+      .fail(function(xhr, textStatus, error) {
         $scope.requestStatus.setStatus("errorLoading");
         $scope.$apply();
         console.log(xhr.responseText);
@@ -944,7 +944,7 @@ client.controller("filesCtrl", function(
                   });
                   $scope.$apply();
                 })
-                .fail(function(xhr, status, error) {
+                .fail(function(xhr, textStatus, error) {
                   file.thumbnailLinkAlt = "Couldn't get file metadata";
                   console.log(JSON.parse(xhr.responseText));
                 });
@@ -970,7 +970,7 @@ client.controller("filesCtrl", function(
                 } catch (error) {}
               }
             })
-            .fail(function(xhr, status, error) {
+            .fail(function(xhr, textStatus, error) {
               file.thumbnailLinkAlt = "Couldn't get file thumbnail";
               console.log(JSON.parse(xhr.responseText));
             });
@@ -1014,7 +1014,7 @@ client.controller("filesCtrl", function(
             });
             $scope.$apply();
           })
-          .fail(function(xhr, status, error) {
+          .fail(function(xhr, textStatus, error) {
             $scope.files.forEach(file => {
               if (file.source == "dropbox") {
                 file.thumbnailLinkAlt = "Couldn't get file thumbnail";
@@ -1063,7 +1063,7 @@ client.controller("filesCtrl", function(
                 $scope.$apply();
               }
             })
-            .fail(function(xhr, status, error) {
+            .fail(function(xhr, textStatus, error) {
               console.log(JSON.parse(xhr.responseText));
             });
         }
@@ -1084,11 +1084,23 @@ client.controller("filesCtrl", function(
       $rootScope.searching.searchQuery = query;
       $scope.currentFolderSourceName = "Search results";
       $scope.requestStatus.setStatus("searching");
+      var sourcesToComplete = 0;
+      var sourcesCompleted = 0;
+      var checkSearchComplete = () => {
+        sourcesCompleted++;
+        if (sourcesCompleted >= sourcesToComplete) {
+          $scope.requestStatus.setStatus("");
+        }
+      };
       $rootScope.sources(
         sources => {
           $scope.files.length = 0;
           sources.forEach(source => {
             if ($scope.user.connectedSources.includes(source.id)) {
+              if (!$scope.requestStatus.searching) {
+                $scope.requestStatus.setStatus("searching");
+              }
+              sourcesToComplete++;
               $.get("api/source/" + source.id + "/search", {
                 uid: $rootScope.user().uid,
                 query: query,
@@ -1107,11 +1119,11 @@ client.controller("filesCtrl", function(
                       $rootScope.searching.searchQuery
                     );
                   };
-                  $scope.requestStatus.setStatus("");
+                  checkSearchComplete();
                   $scope.$apply();
                   $scope.qualifyFileList(source.id);
                 })
-                .fail(function(xhr, status, error) {
+                .fail(function(xhr, textStatus, error) {
                   $scope.requestStatus.setStatus("errorLoading");
                   $scope.$apply();
                   console.log(xhr.responseText);
@@ -1306,7 +1318,7 @@ client.controller("filesCtrl", function(
         }
         $scope.$apply();
       })
-      .fail(function(xhr, status, error) {
+      .fail(function(xhr, textStatus, error) {
         $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file metadata";
         console.log(JSON.parse(xhr.responseText));
       });
@@ -1341,7 +1353,7 @@ client.controller("filesCtrl", function(
             }
             $scope.$apply();
           })
-          .fail(function(xhr, status, error) {
+          .fail(function(xhr, textStatus, error) {
             $scope.detailsFile.thumbnailLinkAlt = "Couldn't get file metadata";
             console.log(JSON.parse(xhr.responseText));
           });
@@ -1391,7 +1403,7 @@ client.controller("filesCtrl", function(
         $scope.$apply();
         console.log(file.dat.starred);
       })
-      .fail(function(xhr, status, error) {
+      .fail(function(xhr, textStatus, error) {
         console.log(JSON.parse(xhr.responseText));
       });
   };
@@ -1406,7 +1418,7 @@ client.controller("filesCtrl", function(
           .done(function(data) {
             $window.open(JSON.parse(data).webContentLink, "_blank");
           })
-          .fail(function(xhr, status, error) {
+          .fail(function(xhr, textStatus, error) {
             $window.alert("Couldn't get download link");
             console.log(JSON.parse(xhr.responseText));
           });
@@ -1432,7 +1444,7 @@ client.controller("filesCtrl", function(
                 );
               }
             })
-            .fail(function(xhr, status, error) {
+            .fail(function(xhr, textStatus, error) {
               $scope.detailsFile.thumbnailLinkAlt =
                 "Couldn't get file metadata";
               console.log(JSON.parse(xhr.responseText));
@@ -1501,7 +1513,29 @@ client.controller("accountCtrl", function(
       $location.replace();
     }
   );
+  $scope.confirmSourceToggle = [];
   $scope.toggleSource = function(source) {
+    if (!$scope.confirmSourceToggle.includes(source.id)) {
+      $scope.confirmSourceToggle.push(source.id);
+      $interval(
+        () => {
+          if ($scope.confirmSourceToggle.includes(source.id)) {
+            $scope.confirmSourceToggle.splice(
+              $scope.confirmSourceToggle.indexOf(source.id),
+              1
+            );
+          }
+        },
+        3000,
+        1
+      );
+      return;
+    } else {
+      $scope.confirmSourceToggle.splice(
+        $scope.confirmSourceToggle.indexOf(source.id),
+        1
+      );
+    }
     if ($rootScope.user().connectedSources.includes(source.id)) {
       $.post("api/source/" + source.id + "/disconnect", {
         uid: $rootScope.user().uid
@@ -1512,7 +1546,7 @@ client.controller("accountCtrl", function(
           $scope.sourceConnectedWrapper[source.id] = false;
           $scope.$apply();
         })
-        .fail(function(xhr, status, error) {
+        .fail(function(xhr, textStatus, error) {
           console.log(JSON.parse(xhr.responseText));
         });
     } else {
@@ -1539,8 +1573,30 @@ client.controller("accountCtrl", function(
         );
     }
   };
+  $scope.confirmAccessLevel = [];
   $scope.setAccessLevel = function(newAccessLevel) {
     if ($rootScope.user().accessLevel != newAccessLevel) {
+      if (!$scope.confirmAccessLevel.includes(newAccessLevel)) {
+        $scope.confirmAccessLevel.push(newAccessLevel);
+        $interval(
+          () => {
+            if ($scope.confirmAccessLevel.includes(newAccessLevel)) {
+              $scope.confirmAccessLevel.splice(
+                $scope.confirmAccessLevel.indexOf(newAccessLevel),
+                1
+              );
+            }
+          },
+          3000,
+          1
+        );
+        return;
+      } else {
+        $scope.confirmAccessLevel.splice(
+          $scope.confirmAccessLevel.indexOf(newAccessLevel),
+          1
+        );
+      }
       $.post("api/user/" + $rootScope.user().uid + "/set_access_level", {
         newAccessLevel: newAccessLevel
       })
@@ -1565,7 +1621,7 @@ client.controller("accountCtrl", function(
             );
           }
         })
-        .fail(function(xhr, status, error) {
+        .fail(function(xhr, textStatus, error) {
           $window.alert("Binder failed to change your access level settings.");
           console.log(xhr.responseText);
         });
@@ -1590,13 +1646,37 @@ client.controller("accountCtrl", function(
       );
     });
   };
+  $scope.emailError = {
+    exists: false
+  };
+  $scope.postEmailError = function(message) {
+    $scope.emailError.exists = true;
+    $scope.emailStatus = message;
+  };
+  $scope.onEmailExit = function() {
+    $scope.emailError.exists = false;
+    if (!$rootScope.validateEmail($scope.profile.email)) {
+      $scope.postEmailError("Please enter a valid email address.");
+    } else {
+      $scope.emailStatus = null;
+    }
+  };
   $scope.updateEmail = function() {
+    $scope.emailError.exists = false;
+    if (!$rootScope.validateEmail($scope.profile.email)) {
+      $scope.emailStatus = "Please enter a valid email address.";
+      return;
+    }
+    if ($scope.profile.password == "") {
+      return;
+    }
     if ($scope.profile.email != $rootScope.user().email) {
-      if ($scope.profile.password == $rootScope.user().password) {
-        var oldEmailAddress = $rootScope.user().email;
-        $.post("api/user/" + $rootScope.user().uid + "/update_email", {
-          email: $scope.profile.email
-        }).done(user => {
+      var oldEmailAddress = $rootScope.user().email;
+      $.post("api/user/" + $rootScope.user().uid + "/update_email", {
+        newEmail: $scope.profile.email,
+        password: $scope.profile.password
+      })
+        .done(user => {
           $rootScope.loggedInUser = user;
           $scope.emailStatus = "Email Updated!";
           $scope.$apply();
@@ -1614,10 +1694,29 @@ client.controller("accountCtrl", function(
               newEmailAddress: user.profile.email
             }
           });
+        })
+        .fail((xhr, textStatus, error) => {
+          switch (xhr.status) {
+            case 403:
+              $scope.emailStatus = "That email is already taken";
+              break;
+            case 401:
+              $scope.emailStatus = "Incorrect password";
+              break;
+            default:
+              $scope.emailStatus = "Something went wrong, please try again.";
+              console.log(xhr.responseText);
+              break;
+          }
+          $scope.$apply();
+          $interval(
+            () => {
+              $scope.emailStatus = null;
+            },
+            5000,
+            1
+          );
         });
-      } else {
-        $scope.emailStatus = "Incorrect password";
-      }
     } else {
       $scope.emailStatus = "Your email address is unchanged.";
     }

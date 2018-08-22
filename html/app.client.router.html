@@ -7,7 +7,7 @@
 
 	<title>Binder</title>
 
-	<link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Montserrat|Helvetica+Neue" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link href="https://www.w3schools.com/w3css/4/w3.css" rel="stylesheet">
 	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
@@ -24,6 +24,7 @@
 </head>
 
 <body>
+	<div class="background"></div>
 	<div id="nav" ng-if="!hideNavBar">
 		<div class="nav-title text-color-primary">Binder</div>
 		<div class="divider"></div>
@@ -46,7 +47,9 @@
 				<i class="material-icons account-avatar" ng-if="!loggedInUser.profile.avatar">face</i>
 			</div>
 			<div>
-				{{loggedInUser.profile.firstname}} {{loggedInUser.profile.lastname}}
+				<div class="account-name">
+					{{loggedInUser.profile.firstname}} {{loggedInUser.profile.lastname}}
+				</div>
 				<div class="account-actions">
 					<a class="text-color-primary" href="account">Account</a>
 					<span class="action-separator text-color-muted">●</span>

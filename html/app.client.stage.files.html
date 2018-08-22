@@ -1,5 +1,5 @@
 <div id="filesStage" class="stage">
-  <div class="main-pane" ng-click="onMainPaneClick()">
+  <div class="main-pane">
     <div class="labelStrip">
       <div class="label">
         <div class="label-text">
@@ -61,8 +61,7 @@
       <h1>No files found</h1>
     </div>
     <div class="file-tray" ng-if="!requestStatus.loadingChildren && !requestStatus.errorLoading && source.length != 0">
-      <div class="tile background-secondary" ng-repeat="file in files" ng-class="{'drop-shadow': file.isFolder, 'drop-shadow-light': !file.isFolder}"
-        ng-click="onFileClick(file)" context-menu="fileContextMenu(file)">
+      <div class="tile background-secondary drop-shadow" ng-repeat="file in files" ng-click="onFileClick(file)" context-menu="fileContextMenu(file)">
         <div class="tile-img" ng-if="!file.isFolder && file.thumbnailLink">
           <img ng-src="{{file.thumbnailLink}}" />
         </div>
@@ -88,6 +87,10 @@
     </div>
   </div>
   <div id="fileDetailsPane" class="ng-hide">
+    <div class="file-close" ng-click="onMainPaneClick()">
+      <i class="material-icons">close</i>
+      Close
+    </div>
     <div class="file-thumbnail background-secondary-light">
       <div class="file-thumbnail-text" ng-if="detailsFile.source == 'gdrive' && user.accessLevel == 0">
         <span class="text-muted">File thumbnails require extended permissions</span>

@@ -195,6 +195,55 @@ exports.setAccessLevel = function(uid, newAccessLevel, onSuccess, onFail) {
   );
 };
 
+exports.updateEmailAddress = function(
+  uid,
+  newEmail,
+  password,
+  onSuccess,
+  onFail
+) {
+  this.getUserWithEmailPassword(
+    newEmail,
+    "password not relevant",
+    () => {
+      // not a mongodb error + (newEmail taken / password correct)
+      onFail(false, true);
+    },
+    (mongodbError, userFound) => {
+      if (mongodbError) {
+        // a mongodb error occured
+        onFail(true);
+      } else if (userFound) {
+        // not a mongodb error + (newEmail taken / password incorrect)
+        onFail(false, true);
+      } else {
+        this.getUserWithUID(
+          uid,
+          user => {
+            if (user.password == password) {
+              mongodb.updateDocumentField(
+                USERS_COL_NAME,
+                { uid: uid },
+                { email: newEmail },
+                () => {
+                  this.getUserWithUID(uid, onSuccess, onFail);
+                },
+                () => {
+                  onFail(true);
+                }
+              );
+            } else {
+              // (not a mongodb error + newEmail not taken) / password incorrect
+              onFail(false, false);
+            }
+          },
+          onFail
+        );
+      }
+    }
+  );
+};
+
 exports.updateProfile = function(uid, newValue, onSuccess, onFail) {
   mongodb.updateDocumentField(
     USERS_COL_NAME,

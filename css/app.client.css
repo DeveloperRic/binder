@@ -1,5 +1,5 @@
 * {
-  font-family: "Montserrat", sans-serif;
+  font-family: "Helvetica Neue", "Montserrat", sans-serif;
   scroll-behavior: smooth;
 }
 
@@ -16,6 +16,19 @@ body {
   color: #393f44;
 }
 
+body .background {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  z-index: -1;
+  background-image: url("./img/background.jpg");
+  background-size: cover;
+  background-position: 100% 0%;
+  background-attachment: fixed;
+  opacity: 0.3;
+}
+
 footer {
   display: flex;
   margin: 20px;
@@ -25,12 +38,14 @@ footer {
 }
 
 h1 {
+  font-family: "Montserrat", sans-serif;
   font-size: 28px;
   font-weight: 600;
 }
 
 h2 {
   margin-top: 0px;
+  font-family: "Montserrat", sans-serif;
   font-size: 24px;
   font-weight: 500;
 }
@@ -38,6 +53,7 @@ h2 {
 h3 {
   min-width: 100%;
   margin-top: 0px;
+  font-family: "Montserrat", sans-serif;
   font-size: 18px;
   font-weight: 500;
 }
@@ -83,6 +99,7 @@ ul {
 
 #nav .nav-title {
   padding: 20px;
+  font-family: "Montserrat", sans-serif;
   font-size: 20px;
   font-weight: 700;
 }
@@ -110,6 +127,7 @@ ul {
 }
 
 #nav .nav-button a {
+  font-family: "Montserrat", sans-serif;
   color: #2e7d32;
 }
 
@@ -150,6 +168,7 @@ ul {
   display: flex;
   margin: 10px 10px 10px 10px;
   align-items: center;
+  font-family: "Montserrat", sans-serif;
 }
 
 #nav .account-avatars {
@@ -161,8 +180,8 @@ ul {
   font-size: 32px;
 }
 
-#nav .account-details {
-  display: inline-flex;
+#nav .account-name {
+  line-height: 1;
 }
 
 #nav .account-actions {
@@ -171,6 +190,7 @@ ul {
 }
 
 #nav .account-actions a {
+  font-family: "Montserrat", sans-serif;
   font-size: 12px;
 }
 
@@ -202,6 +222,7 @@ ul {
   padding: 20px;
   position: fixed;
   top: 0;
+  font-family: "Montserrat", sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: #9e9e9e;
@@ -209,6 +230,7 @@ ul {
 
 #welcomeStage .create-account {
   padding: 40px;
+  border: 0.5px solid #4caf50;
   border-radius: 10px;
   text-align: center;
 }
@@ -263,6 +285,7 @@ ul {
   padding: 20px;
   position: fixed;
   top: 0;
+  font-family: "Montserrat", sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: #9e9e9e;
@@ -270,6 +293,7 @@ ul {
 
 #loginStage .main-pane {
   padding: 40px;
+  border: 0.5px solid #4caf50;
   border-radius: 10px;
   text-align: center;
 }
@@ -360,8 +384,7 @@ ul {
   padding-left: 30px;
   padding-right: 20px;
   flex-grow: 1;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
 }
 
 #dashboardStage .source-tile .source-enter {
@@ -371,12 +394,14 @@ ul {
   border-bottom-right-radius: 5px;
   align-items: center;
   justify-content: center;
+  font-family: "Montserrat", sans-serif;
   font-size: 18px;
   color: #fafafa;
   background-color: #f5f5f5;
 }
 
 #dashboardStage .source-tile .source-connect {
+  font-family: "Montserrat", sans-serif;
   color: unset;
 }
 
@@ -513,7 +538,8 @@ ul {
   margin-top: 10px;
   flex-grow: 1;
   flex-wrap: wrap;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 #filesStage .tile {
@@ -539,7 +565,7 @@ ul {
 
 #filesStage .tile .tile-img img {
   max-width: 100%;
-  max-height: 100%;
+  max-height: 125px;
   object-fit: contain;
   object-position: 50% 50%;
 }
@@ -562,7 +588,7 @@ ul {
 #filesStage .tile .tile-content-box {
   display: flex;
   width: 100%;
-  padding: 10px 5px 5px 7px;
+  padding: 10px 7px 5px;
   align-items: center;
   background-color: #eeeeee;
 }
@@ -597,6 +623,7 @@ ul {
   flex-grow: 1;
   font-size: 15px;
   font-weight: 700;
+  letter-spacing: 0.7px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -629,7 +656,7 @@ ul {
 }
 
 #filesStage .tile .tile-bottom img {
-  min-height: 12px;
+  min-height: 14px;
   max-height: 18px;
 }
 
@@ -643,11 +670,22 @@ ul {
   border-left: 1px solid #e0e0e0;
 }
 
+#filesStage #fileDetailsPane .file-close {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+}
+
+#filesStage #fileDetailsPane .file-close:hover {
+  background-color: #fafafa;
+}
+
 #filesStage #fileDetailsPane .file-thumbnail {
   display: flex;
   width: 100%;
   min-height: 100px;
-  max-height: 20vw;
+  max-height: 250px;
   margin-bottom: 20px;
   align-items: center;
   justify-content: center;
@@ -657,6 +695,8 @@ ul {
 
 #filesStage #fileDetailsPane .file-thumbnail img {
   min-width: 100%;
+  max-height: 250px;
+  object-fit: contain;
   align-self: flex-start;
 }
 
@@ -806,6 +846,7 @@ ul {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  font-family: "Montserrat", sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: #757575;
@@ -826,8 +867,9 @@ ul {
 }
 
 #accountStage .bubbles .bubble .status {
-  font-size: 12px;
   margin-top: 5px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 #accountStage .profile-status {
