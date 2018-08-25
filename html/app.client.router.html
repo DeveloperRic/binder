@@ -5,12 +5,13 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<title>Binder</title>
+	<title ng-bind="$root.title">Binder</title>
 
-	<link href="https://fonts.googleapis.com/css?family=Montserrat|Helvetica+Neue" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Montserrat|Open+Sans|Helvetica+Neue" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link href="https://www.w3schools.com/w3css/4/w3.css" rel="stylesheet">
 	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+	<link href="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/viewer.css" rel="stylesheet">
 	<link href="../css/app.client.css" rel="stylesheet">
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
@@ -20,6 +21,9 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.2/angular-cookies.js"></script>
 
 	<script src="../modules/angular-bootstrap-contextmenu/contextMenu.js"></script>
+	<script src="../modules/angular-inview/angular-inview.js"></script>
+	<script src="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/pdf.js"></script>
+	<script src="../modules/angular-pdfjs-viewer/dist/angular-pdfjs-viewer.js"></script>
 	<script src="../angular/app.client.js"></script>
 </head>
 
@@ -30,10 +34,10 @@
 		<div class="divider"></div>
 		<div class="nav-buttons">
 			<div class="nav-button nav-search" ng-if="searching">
-				<form ng-submit="searching.search(searching.searchQuery)">
+				<form ng-submit="searching.search(searching.searchQuery, searching.searchSource)">
 					<input type="text" placeholder="Search" ng-model="searching.searchQuery" />
 				</form>
-				<i class="material-icons" ng-click="searching.search(searching.searchQuery)">search</i>
+				<a title="Search for {{searching.searchQuery}}"><i class="material-icons" ng-click="searching.search(searching.searchQuery, searching.searchSource)">search</i></a>
 			</div>
 			<div class="nav-button background-accent-light" ng-repeat="item in navButtons">
 				<a ng-if="item.folder" ng-href="/files?sourceId={{item.source}}&folderId={{item.folder}}">{{item.text}}</a>
@@ -51,7 +55,7 @@
 					{{loggedInUser.profile.firstname}} {{loggedInUser.profile.lastname}}
 				</div>
 				<div class="account-actions">
-					<a class="text-color-primary" href="account">Account</a>
+					<a class="text-color-primary" href="/settings">Settings</a>
 					<span class="action-separator text-color-muted">●</span>
 					<a class="text-color-primary" href="" ng-click="logoutUser()">Logout</a>
 				</div>
@@ -61,6 +65,42 @@
 
 	<div class="stages">
 		<ng-view></ng-view>
+	</div>
+
+	<div class="previewContainer" ng-if="!!preview">
+		<div class="preview">
+			<div class="preview-toolbar">
+				<div class="preview-toolbar-left">
+					<i class="material-icons" ng-if="!preview.file.dat.iconLink && !preview.file.isFolder">insert_drive_file</i>
+					<i class="material-icons" ng-if="!preview.file.dat.iconLink && preview.file.isFolder">folder</i>
+					<img ng-src="preview.file.dat.iconLink" ng-if="preview.file.dat.iconLink"> {{preview.file.dat.name}}
+				</div>
+				<div class="preview-toolbar-right" ng-click="preview.close()">
+					<i class="material-icons">close</i>
+					Close
+				</div>
+			</div>
+			<div class="preview-main">
+				<div class="preview-main-pdf" ng-if="!preview.loading && preview.type == 'pdf'">
+					<pdfjs-viewer ng-prop-data="preview.file.preview" on-init="preview.onLoad()" print="false"></pdfjs-viewer>
+				</div>
+				<div class="preview-main-html" ng-if="!preview.loading && preview.type == 'docx'">
+					{{preview.html}}
+				</div>
+				<div class="status-box" ng-if="preview.supported && preview.loading">
+					<i class="status-box-loading material-icons">autorenew</i>
+					<h1>Loading preview....</h1>
+				</div>
+				<div class="status-box" ng-if="!preview.supported">
+					<i class="material-icons">error_outline</i>
+					<h1>This file cannot be previewed</h1>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="popupContainer center-content" ng-if="!!popup">
+		<ng-include src="popup.popupView"></ng-include>
 	</div>
 </body>
 

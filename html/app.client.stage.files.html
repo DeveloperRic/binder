@@ -1,10 +1,11 @@
 <div id="filesStage" class="stage">
-  <div class="main-pane">
+  <div class="main-pane" in-view-container>
     <div class="labelStrip">
       <div class="label">
         <div class="label-text">
           <div class="pages">
-            <a class="page" ng-href="/files?sourceId={{currentFolderSource}}&folderId=root">{{currentFolderSourceName}}</a>
+            <a class="page" ng-href="/files?sourceId={{currentFolderSource}}&folderId=root" ng-if="!searching.insideSearch">{{currentFolderSourceName}}</a>
+            <a class="page" ng-href="/files/search?q={{searching.searchQuery}}" ng-if="searching.insideSearch">{{currentFolderSourceName}}</a>
             <a class="page" ng-repeat="page in pageStack" ng-click="onFileClick(page)"> / {{page.dat.name}}</a>
           </div>
           <div class="invisible label-floor"></div>
@@ -42,25 +43,7 @@
         </div>
       </div>
     </div>
-    <div class="status-box" ng-if="requestStatus.loadingChildren">
-      <i class="status-box-loading material-icons">autorenew</i>
-      <h1>Loading files....</h1>
-    </div>
-    <div class="status-box" ng-if="requestStatus.searching">
-      <i class="status-box-loading material-icons">autorenew</i>
-      <h1>Searching....</h1>
-    </div>
-    <div class="status-box" ng-if="!requestStatus.loadingChildren && requestStatus.errorLoading">
-      <i class="material-icons">error_outline</i>
-      <h1>Couldn't load your files</h1>
-      <h3>If this error persits, try reconnecting your sources to your account.</h3>
-      <h3>For more help contact support.</h3>
-    </div>
-    <div class="status-box" ng-if="!requestStatus.loadingChildren && !requestStatus.searching && !requestStatus.errorLoading && files.length == 0">
-      <i class="material-icons">inbox</i>
-      <h1>No files found</h1>
-    </div>
-    <div class="file-tray" ng-if="!requestStatus.loadingChildren && !requestStatus.errorLoading && source.length != 0">
+    <div class="file-tray" ng-if="!requestStatus.errorLoading && files.length != 0">
       <div class="tile background-secondary drop-shadow" ng-repeat="file in files" ng-click="onFileClick(file)" context-menu="fileContextMenu(file)">
         <div class="tile-img" ng-if="!file.isFolder && file.thumbnailLink">
           <img ng-src="{{file.thumbnailLink}}" />
@@ -84,8 +67,30 @@
           <img src="../css/img/onedrive_lockup.png" ng-if="file.source=='onedrive'">
         </div>
       </div>
+
+      <div class="next-page" in-view="$inview&&nextPageInView($inview)"></div>
+    </div>
+
+    <div class="status-box" ng-if="requestStatus.loadingChildren">
+      <i class="status-box-loading material-icons">autorenew</i>
+      <h1>Loading files....</h1>
+    </div>
+    <div class="status-box" ng-if="requestStatus.searching">
+      <i class="status-box-loading material-icons">autorenew</i>
+      <h1>Searching....</h1>
+    </div>
+    <div class="status-box" ng-if="!requestStatus.loadingChildren && requestStatus.errorLoading">
+      <i class="material-icons">error_outline</i>
+      <h1>Couldn't load your files</h1>
+      <h3>If this error persits, try reconnecting your sources to your account.</h3>
+      <h3>For more help contact support.</h3>
+    </div>
+    <div class="status-box" ng-if="!requestStatus.loadingChildren && !requestStatus.searching && !requestStatus.errorLoading && files.length == 0">
+      <i class="material-icons">inbox</i>
+      <h1>No files found</h1>
     </div>
   </div>
+
   <div id="fileDetailsPane" class="ng-hide">
     <div class="file-close" ng-click="onMainPaneClick()">
       <i class="material-icons">close</i>
@@ -95,7 +100,7 @@
       <div class="file-thumbnail-text" ng-if="detailsFile.source == 'gdrive' && user.accessLevel == 0">
         <span class="text-muted">File thumbnails require extended permissions</span>
         <br/>
-        <a class="file-thumbnail-text-link text-color-accent" href="/account#accessLevels">Click here to give Binder more
+        <a class="file-thumbnail-text-link text-color-accent" href="/settings#accessLevels">Click here to give Binder more
           access
         </a>
       </div>

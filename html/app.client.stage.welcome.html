@@ -1,6 +1,6 @@
 <div id="welcomeStage" class="stage">
 	<div class="title">Binder</div>
-	<div class="create-account background-secondary-light drop-shadow" ng-show="!userFound">
+	<div class="create-account background-secondary-light drop-shadow" ng-show="!disclaimerShown">
 		<h1>Hi! This is Binder!</h1>
 		<h2>Get started by creating an account</h2>
 		<form name="createAccountForm">
@@ -38,7 +38,7 @@
 			</table>
 			<div class="error" ng-show="error.exists" ng-repeat="line in error.message">{{line}}</div>
 			<div class="button-row center-content">
-				<button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-click="createAccount()">Create
+				<button type="submit" class="btn create-account-next text-color-inverse background-accent" ng-click="showDisclaimers()">Create
 					Account
 				</button>
 				or
@@ -46,4 +46,31 @@
 			</div>
 		</form>
 	</div>
+	<div class="create-account background-secondary-light drop-shadow" ng-if="disclaimerShown">
+		<div class="disclaimer-back">
+			<button class="btn background-primary" ng-click="hideDisclaimers()">
+				<i class="material-icons">arrow_back</i>
+			</button>
+		</div>
+		<h2>Lets review some basics</h2>
+		<br/>
+		<p>Cookies will be used to help improve your experience with Binder.</p>
+		<p>Binder will never request or store any information that it does not need. You are also able to disable non-essential
+			queries essentialy stripping your Binder down to a simple file list.
+		</p>
+		<p>Two-factor authentication can be enabled in settings after sign-up.</p>
+		<br/>
+		<h4>Please select a default login duration below</h4>
+		<p>Please note this setting is global and will persist even after you logout.</p>
+		<div class="duration-list">
+			<div class="duration-item" ng-repeat="dur in loginDurations" ng-click="selectLoginDuration($index)" ng-class="{'background-accent': selectedLoginDuration == $index, 'text-color-inverse': selectedLoginDuration == $index}">
+				{{dur[0]}}
+			</div>
+		</div>
+		<button type="submit" class="btn create-account-submit text-color-inverse background-accent" ng-if="selectedLoginDuration >= 0"
+		 ng-click="createAccount()">Finish creating account
+		</button>
+	</div>
+	<div class="photo-credit">Background by <a href="https://unsplash.com/photos/7jQh3EiS8Bs?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+		 target="_blank">Oleg Laptev</a></div>
 </div>

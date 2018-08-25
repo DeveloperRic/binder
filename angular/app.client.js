@@ -1,65 +1,79 @@
 var client = angular.module("client", [
   "ngRoute",
   "ngCookies",
-  "ui.bootstrap.contextMenu"
+  "ui.bootstrap.contextMenu",
+  "angular-inview",
+  "pdfjsViewer"
 ]);
 
 const USER_SESSION_EXPIRATION_SECONDS = 3600;
-// REMEMBER TO ADD COOKIE WARNING!
-// focused routeparam to bring a file back into view when using browser history
 
 client.config(function($locationProvider, $routeProvider) {
   $locationProvider.html5Mode(true);
   $routeProvider
     .when("/welcome", {
       templateUrl: "app.client.stage.welcome.html",
-      controller: "welcomeCtrl"
+      controller: "welcomeCtrl",
+      title: "Get Started on Binder"
     })
     .when("/login", {
       templateUrl: "app.client.stage.login.html",
-      controller: "loginCtrl"
+      controller: "loginCtrl",
+      title: "Login to Binder"
     })
     .when("/connect", {
       templateUrl: "app.client.stage.connect.html",
-      controller: "connectCtrl"
+      controller: "connectCtrl",
+      title: "Connect a source - Binder"
     })
     .when("/connect/:sourceId", {
       templateUrl: "app.client.stage.connect.callback.html",
-      controller: "connectCallbackCtrl"
+      controller: "connectCallbackCtrl",
+      title: "Connecting - Binder"
     })
     .when("/dashboard", {
       templateUrl: "app.client.stage.dashboard.html",
-      controller: "dashboardCtrl"
+      controller: "dashboardCtrl",
+      title: "Binder"
     })
     .when("/files", {
       templateUrl: "app.client.stage.files.html",
-      controller: "filesCtrl"
+      controller: "filesCtrl",
+      title: "Files - Binder"
     })
     .when("/files/search", {
       templateUrl: "app.client.stage.files.html",
-      controller: "filesCtrl"
+      controller: "filesCtrl",
+      title: "Search - Binder"
     })
-    .when("/account", {
-      templateUrl: "app.client.stage.account.html",
-      controller: "accountCtrl"
+    .when("/settings", {
+      templateUrl: "app.client.stage.settings.html",
+      controller: "settingsCtrl",
+      title: "Settings - Binder"
     })
     .otherwise({
       template: "<h1>Error 404</h1><p>The requested page was not found</p>"
     });
 });
 
-client.run(function(
-  $rootScope,
-  $cookies,
-  $location,
-  $window,
-  $httpParamSerializer
-) {
-  $rootScope.userSessionExpiration = function() {
+client.run(function($rootScope, $location, $cookies, $window) {
+  $rootScope.userSessionExpiration = function(expirationSeconds) {
     var expiration = new Date();
-    expiration.setTime(
-      expiration.getTime() + USER_SESSION_EXPIRATION_SECONDS * 1000
+    var duration = USER_SESSION_EXPIRATION_SECONDS;
+    var durationCookieExpiry = new Date();
+    durationCookieExpiry.setFullYear(
+      durationCookieExpiry.getFullYear() + 1,
+      durationCookieExpiry.getMonth() + 1
     );
+    if (!!expirationSeconds) {
+      duration = expirationSeconds;
+    } else if (!!$cookies.get("app.client.data.defaultLoginDuration")) {
+      duration = parseInt($cookies.get("app.client.data.defaultLoginDuration"));
+    }
+    $cookies.put("app.client.data.defaultLoginDuration", duration, {
+      expires: durationCookieExpiry.toUTCString()
+    });
+    expiration.setTime(expiration.getTime() + duration * 1000);
     return expiration;
   };
   $rootScope.userSession = function(uid, sessionKey, expiration) {
@@ -144,7 +158,9 @@ client.run(function(
         onSuccess($rootScope.tempSourceList);
       })
       .fail(function(xhr, textStatus, error) {
-        onFail(xhr, textStatus, error);
+        if (!!onFail) {
+          onFail(xhr, textStatus, error);
+        }
       });
   };
   $rootScope.getSource = sourceid => {
@@ -156,30 +172,59 @@ client.run(function(
     });
     return foundSource;
   };
-  $rootScope.extendGDriveScope = function() {
-    $.post("api/source/gdrive/extendscope", {
-      uid: $rootScope.user().uid
-    })
-      .done(function(userdata) {
-        $rootScope.loggedInUser = userdata;
-        $location.url(
-          "/connect?" +
-            $httpParamSerializer({
-              forceUpdate: true,
-              updateSources: ["gdrive"]
-            })
-        );
-        $location.replace();
-      })
-      .fail(function(xhr, textStatus, error) {
-        console.log(
-          "Failed to extend user " +
-            $rootScope.user.uid +
-            "'s gdrive scope!\n" +
-            xhr.responseText
-        );
-      });
+  $rootScope.showPopup = function(type, title, details, options) {
+    var view = "app.client.popup.";
+    switch (type.toLowerCase()) {
+      case "error":
+        view += "error.html";
+        if (!!!details) {
+          details = "Please report this!";
+        }
+        break;
+      case "select":
+        view += "select.html";
+        break;
+      default:
+        view += "info.html";
+        break;
+    }
+    $rootScope.popup = {
+      popupView: view,
+      title: title,
+      details: details,
+      close: () => {
+        $rootScope.popup = null;
+      }
+    };
+    if (!!options) {
+      $rootScope.popup = Object.assign($rootScope.popup, options);
+    }
   };
+
+  $rootScope.$on("$routeChangeSuccess", function(
+    event,
+    currentRoute,
+    previousRoute
+  ) {
+    //Change page title, based on Route information
+    if (
+      $location.path().startsWith("/files") &&
+      !!currentRoute.params.sourceId
+    ) {
+      $rootScope.sources(sources => {
+        for (let i in sources) {
+          if (sources[i].id == currentRoute.params.sourceId) {
+            $rootScope.title = currentRoute.title.replace(
+              "Binder",
+              sources[i].name
+            );
+          }
+        }
+      });
+    } else {
+      $rootScope.title = currentRoute.title;
+    }
+  });
 });
 
 $(document).ready(function() {
@@ -205,20 +250,12 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
   // lets assume that no cookies have been stored (for now)
   // var encrptedUsername = $cookieStore.get("username");
   // console.log(encrptedUsername);
-  $rootScope.user(
-    () => {
-      $window.location.href = "/dashboard";
-    },
-    loggedInBefore => {
-      if (loggedInBefore) {
-        $window.location.href = "/login";
-      }
-    }
-  );
+  $rootScope.user(() => {
+    $window.location.href = "/dashboard";
+  });
 
   $rootScope.hideNavBar = true;
 
-  $scope.userFound = false;
   $scope.email = "";
   $scope.password = "";
   $scope.passwordconfirm = "";
@@ -254,7 +291,7 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
       $scope.postError(passwordMessage);
     }
   };
-  $scope.createAccount = function() {
+  $scope.showDisclaimers = function() {
     $scope.error.exists = false;
     $scope.emailInvalid = false;
     $scope.passwordInvalid = false;
@@ -272,7 +309,26 @@ client.controller("welcomeCtrl", function($scope, $rootScope, $window) {
       $scope.postError(passwordMessage);
       return;
     }
-    var expiration = $rootScope.userSessionExpiration();
+    $scope.disclaimerShown = true;
+  };
+  $scope.hideDisclaimers = function() {
+    $scope.disclaimerShown = false;
+  };
+  var yearDuration = new Date();
+  yearDuration.setFullYear(yearDuration.getFullYear() + 1);
+  $scope.loginDurations = [
+    ["1 hour", 3600],
+    ["1 week", 604800],
+    ["1 year", (yearDuration.getTime() - new Date().getTime()) / 1000]
+  ];
+  $scope.selectedLoginDuration = -1;
+  $scope.selectLoginDuration = function(i) {
+    $scope.selectedLoginDuration = i;
+  };
+  $scope.createAccount = function() {
+    var expiration = $rootScope.userSessionExpiration(
+      $scope.loginDurations[$scope.selectedLoginDuration][1]
+    );
     $.post("api/user/new_user", {
       email: $scope.email,
       password: $scope.password,
@@ -299,14 +355,12 @@ client.controller("loginCtrl", function(
   $rootScope,
   $routeParams,
   $window,
-  $interval
+  $interval,
+  $cookies
 ) {
-  if ($routeParams.fromWelcome) {
-    $scope.canReturn = true;
-    $scope.return = function() {
-      $rootScope.switchStage("welcome");
-    };
-  }
+  $rootScope.user(() => {
+    $window.location.href = "/dashboard";
+  });
 
   $rootScope.hideNavBar = true;
 
@@ -328,6 +382,29 @@ client.controller("loginCtrl", function(
       $scope.postError("Please enter a valid email address.");
     }
   };
+  var yearDuration = new Date();
+  yearDuration.setFullYear(yearDuration.getFullYear() + 1);
+  $scope.loginDurations = [
+    ["1 hour", 3600],
+    ["1 week", 604800],
+    ["1 year", (yearDuration.getTime() - new Date().getTime()) / 1000]
+  ];
+  $scope.selectedLoginDuration = 0;
+  $scope.selectLoginDuration = function(i) {
+    $scope.selectedLoginDuration = i;
+  };
+  if (!!$cookies.get("app.client.data.defaultLoginDuration")) {
+    var cookieSetDuration = parseInt(
+      $cookies.get("app.client.data.defaultLoginDuration")
+    );
+    if (cookieSetDuration < $scope.loginDurations[1][1]) {
+      $scope.selectedLoginDuration = 0;
+    } else if (cookieSetDuration < $scope.loginDurations[2][1]) {
+      $scope.selectedLoginDuration = 1;
+    } else {
+      $scope.selectedLoginDuration = 2;
+    }
+  }
   $scope.login = function() {
     $scope.error.exists = false;
     if (!$rootScope.validateEmail($scope.email)) {
@@ -337,7 +414,9 @@ client.controller("loginCtrl", function(
     if ($scope.password == "") {
       return;
     }
-    var expiration = $rootScope.userSessionExpiration();
+    var expiration = $rootScope.userSessionExpiration(
+      $scope.loginDurations[$scope.selectedLoginDuration][1]
+    );
     $.post("api/user/login_user", {
       email: $scope.email,
       password: $scope.password,
@@ -406,7 +485,7 @@ client.controller("connectCtrl", function(
           $rootScope.$apply();
         },
         () => {
-          $window.alert("Couldn't load sources.");
+          $rootScope.showPopup("error", "Couldn't load sources");
         }
       );
     },
@@ -435,7 +514,11 @@ client.controller("connectCtrl", function(
           }
         },
         error => {
-          $window.alert("(" + error.status + ") -> " + error.data);
+          $rootScope.showPopup(
+            "error",
+            "Couldn't get connection URL (" + error.status + ")",
+            error.data
+          );
         }
       );
   };
@@ -460,7 +543,11 @@ client.controller("connectCtrl", function(
           $scope.onConnect($scope.selected.id);
         },
         error => {
-          $window.alert("(" + error.status + ") -> " + error.data);
+          $rootScope.showPopup(
+            "error",
+            "Couldn't confirm the connection (" + error.status + ")",
+            error.data
+          );
         }
       );
   };
@@ -583,6 +670,7 @@ client.controller("dashboardCtrl", function(
       $location.path("/files/search").search({ q: query });
     }
   };
+  $scope.tiles = [];
   $rootScope.user(
     user => {
       $scope.user = user;
@@ -595,7 +683,9 @@ client.controller("dashboardCtrl", function(
         sources => {
           $scope.sources = sources;
           $scope.styles = {};
+          var index = -1;
           sources.forEach(source => {
+            index++;
             $scope.styles[source.id] = {
               "background-color": "initial"
             };
@@ -610,14 +700,26 @@ client.controller("dashboardCtrl", function(
                 $scope.styles[source.id]["background-color"] = "#0061FF";
                 break;
             }
+            $scope.tiles.push({ type: "files", source: source });
+          });
+          sources.forEach(source => {
+            $scope.tiles.push({
+              type: "upload",
+              source: source
+            });
+          });
+          sources.forEach(source => {
+            $scope.tiles.push({
+              type: "search",
+              source: source
+            });
           });
           $scope.requestStatus.setStatus("");
           $scope.$apply();
         },
         () => {
-          // TODO: message on sources load failure.
           $scope.requestStatus.setStatus("errorLoading");
-          console.log("Failed to get source list");
+          $rootScope.showPopup("error", "Couldn't load sources");
           $scope.$apply();
         }
       );
@@ -639,7 +741,8 @@ client.controller("filesCtrl", function(
   $window,
   $httpParamSerializer,
   $interval,
-  $cookies
+  $cookies,
+  $route
 ) {
   $scope.pageStack = [];
   $scope.sorting = {
@@ -677,7 +780,6 @@ client.controller("filesCtrl", function(
       }
     ],
     orderBy: [],
-    criteriaClickCallback: () => {},
     orderByStr: function(sourceId) {
       var realOrderBy = [];
       $scope.sorting.orderBy.forEach(method => {
@@ -712,7 +814,7 @@ client.controller("filesCtrl", function(
       } else {
         $scope.sorting.toggleCriteria(criteria);
       }
-      $scope.sorting.criteriaClickCallback();
+      $scope.openFolderCallback();
     },
     updateSortCookie: function() {
       var sortOrderCookie = [];
@@ -796,12 +898,24 @@ client.controller("filesCtrl", function(
       }
     });
   };
-  $scope.openFolder = function(sourceId, folderId, replace, batchRequest) {
+  $scope.openFolderCallback = () => {};
+  $scope.openFolder = function(
+    sourceId,
+    folderId,
+    replace,
+    batchRequest,
+    doNotClear
+  ) {
+    if ($location.path() != "/files") {
+      $location.path("/files");
+    }
     $scope.requestStatus.setStatus("loadingChildren");
     if (sourceId == "all") {
       $rootScope.sources(
         sources => {
-          $scope.files.length = 0;
+          if (!doNotClear) {
+            $scope.files.length = 0;
+          }
           sources.forEach(source => {
             if ($scope.user.connectedSources.includes(source.id)) {
               $scope.openFolder(source.id, folderId, replace, true);
@@ -812,9 +926,8 @@ client.controller("filesCtrl", function(
           $scope.$apply();
         },
         () => {
-          // TODO: message on sources load failure.
           $scope.requestStatus.setStatus("errorLoading");
-          console.log("Failed to get source list");
+          $rootScope.showPopup("error", "Couldn't load sources");
           $scope.$apply();
         }
       );
@@ -824,7 +937,9 @@ client.controller("filesCtrl", function(
     $scope.currentFolderSource = batchRequest ? "all" : sourceId;
     var folderIndex = 0;
     if (folderId != "root") {
-      $scope.files.length = 0;
+      if (!doNotClear) {
+        $scope.files.length = 0;
+      }
       $location.search({
         sourceId: sourceId,
         folderId: folderId
@@ -836,6 +951,7 @@ client.controller("filesCtrl", function(
     var requestFolderUrl = "/" + folderId;
     var requestParams = {
       uid: $rootScope.user().uid,
+      pageToken: $scope.nextPageToken,
       params: {
         orderBy: $scope.sorting.orderByStr(sourceId)
       }
@@ -844,8 +960,11 @@ client.controller("filesCtrl", function(
       requestFolderUrl = "";
       requestParams = Object.assign(requestParams, { folderPath: folderId });
     }
+    var qualifyStartIndex = $scope.files.length;
     $.get("api/source/" + sourceId + requestFolderUrl + "/files", requestParams)
-      .done(function(list) {
+      .done(function(res) {
+        $scope.nextPageToken = res.nextPageToken;
+        var list = res.files;
         list.forEach(file => {
           var fileWrapper = $scope.unifySourceFile(file.source, file.dat);
           // sort the files by folder for sources that don't enable that kind of sorting
@@ -860,12 +979,13 @@ client.controller("filesCtrl", function(
             $scope.files.push(fileWrapper);
           }
         });
-        $scope.sorting.criteriaClickCallback = () => {
+        $scope.openFolderCallback = () => {
           $scope.openFolder(
             $scope.currentFolderSource,
             $scope.currentFolder,
             true,
-            batchRequest
+            batchRequest,
+            true
           );
         };
         if (sourceId == "dropbox" && $scope.files.length > 0) {
@@ -890,7 +1010,7 @@ client.controller("filesCtrl", function(
         }
         $scope.requestStatus.setStatus("");
         $scope.$apply();
-        $scope.qualifyFileList(sourceId);
+        $scope.qualifyFileList(sourceId, qualifyStartIndex);
       })
       .fail(function(xhr, textStatus, error) {
         $scope.requestStatus.setStatus("errorLoading");
@@ -925,55 +1045,60 @@ client.controller("filesCtrl", function(
       });
     }
   };
-  $scope.qualifyFileList = function(sourceId) {
+  $scope.qualifyFileList = function(sourceId, qualifyStartIndex) {
+    if (!!!qualifyStartIndex) {
+      qualifyStartIndex = 0;
+    }
     if (sourceId != "dropbox") {
       var index = -1;
       $scope.files.forEach(file => {
         index++;
-        if (file.source == "gdrive") {
-          $interval(
-            () => {
-              $.get("api/source/gdrive/" + file.id + "/get_metadata", {
-                uid: $rootScope.user().uid,
-                keys: ["thumbnailLink"]
-              })
-                .done(function(data) {
-                  file.dat = Object.assign(file.dat, data);
-                  file = Object.assign(file, {
-                    thumbnailLink: data.thumbnailLink
-                  });
-                  $scope.$apply();
+        if (index >= qualifyStartIndex) {
+          if (file.source == "gdrive") {
+            $interval(
+              () => {
+                $.get("api/source/gdrive/" + file.id + "/get_metadata", {
+                  uid: $rootScope.user().uid,
+                  keys: ["thumbnailLink"]
                 })
-                .fail(function(xhr, textStatus, error) {
-                  file.thumbnailLinkAlt = "Couldn't get file metadata";
-                  console.log(JSON.parse(xhr.responseText));
-                });
-            },
-            150 * (index + 1),
-            1
-          );
-        } else if (file.source == "onedrive") {
-          $.get("api/source/onedrive/" + file.id + "/collection/thumbnails", {
-            uid: $rootScope.user().uid
-          })
-            .done(function(data) {
-              file.dat = Object.assign(file.dat, {
-                thumbnails: data.value
-              });
-              // add another switch if a different source also separates collection calls
-              if (data.value) {
-                try {
-                  file = Object.assign(file, {
-                    thumbnailLink: data.value[0].large.url
+                  .done(function(data) {
+                    file.dat = Object.assign(file.dat, data);
+                    file = Object.assign(file, {
+                      thumbnailLink: data.thumbnailLink
+                    });
+                    $scope.$apply();
+                  })
+                  .fail(function(xhr, textStatus, error) {
+                    file.thumbnailLinkAlt = "Couldn't get file metadata";
+                    console.log(JSON.parse(xhr.responseText));
                   });
-                  $scope.$apply();
-                } catch (error) {}
-              }
+              },
+              150 * (index + 1),
+              1
+            );
+          } else if (file.source == "onedrive") {
+            $.get("api/source/onedrive/" + file.id + "/collection/thumbnails", {
+              uid: $rootScope.user().uid
             })
-            .fail(function(xhr, textStatus, error) {
-              file.thumbnailLinkAlt = "Couldn't get file thumbnail";
-              console.log(JSON.parse(xhr.responseText));
-            });
+              .done(function(data) {
+                file.dat = Object.assign(file.dat, {
+                  thumbnails: data.value
+                });
+                // add another switch if a different source also separates collection calls
+                if (data.value) {
+                  try {
+                    file = Object.assign(file, {
+                      thumbnailLink: data.value[0].large.url
+                    });
+                    $scope.$apply();
+                  } catch (error) {}
+                }
+              })
+              .fail(function(xhr, textStatus, error) {
+                file.thumbnailLinkAlt = "Couldn't get file thumbnail";
+                console.log(JSON.parse(xhr.responseText));
+              });
+          }
         }
       });
     } else {
@@ -1072,17 +1197,25 @@ client.controller("filesCtrl", function(
   };
   $rootScope.searching = {
     searchQuery: "",
-    search: function(query) {
-      query = query.replace("'", "");
+    search: function(query, sourceId, doNotClear) {
+      query = query.replace("'", "").replace('"', "");
       if ($location.path() != "/files/search") {
-        $location.path("/files/search").search({ q: query });
+        $location
+          .path("/files/search")
+          .search({ q: query, sourceId: sourceId });
         return;
       } else {
-        $location.search({ q: query });
+        $location.search({ q: query, sourceId: sourceId });
         $location.replace();
       }
+      $scope.searching.insideSearch = true;
       $rootScope.searching.searchQuery = query;
+      $rootScope.searching.searchSource = sourceId;
       $scope.currentFolderSourceName = "Search results";
+      var qualifyStartIndex = $scope.files.length;
+      if (!!!$scope.nextSearchTokens) {
+        $scope.nextSearchTokens = {};
+      }
       $scope.requestStatus.setStatus("searching");
       var sourcesToComplete = 0;
       var sourcesCompleted = 0;
@@ -1094,47 +1227,65 @@ client.controller("filesCtrl", function(
       };
       $rootScope.sources(
         sources => {
-          $scope.files.length = 0;
+          if (!doNotClear) {
+            $scope.files.length = 0;
+          }
           sources.forEach(source => {
-            if ($scope.user.connectedSources.includes(source.id)) {
-              if (!$scope.requestStatus.searching) {
-                $scope.requestStatus.setStatus("searching");
-              }
-              sourcesToComplete++;
-              $.get("api/source/" + source.id + "/search", {
-                uid: $rootScope.user().uid,
-                query: query,
-                params: {
-                  orderBy: $scope.sorting.orderByStr(source.id)
+            if (!!!sourceId || source.id == sourceId) {
+              if ($scope.user.connectedSources.includes(source.id)) {
+                if (!!sourceId) {
+                  $scope.currentFolderSourceName +=
+                    " in " + source.name + " (click to search in all sources)";
                 }
-              })
-                .done(function(list) {
-                  list.forEach(file => {
-                    $scope.files.push(
-                      $scope.unifySourceFile(file.source, file.dat)
-                    );
-                  });
-                  $scope.sorting.criteriaClickCallback = () => {
-                    $rootScope.searching.search(
-                      $rootScope.searching.searchQuery
-                    );
-                  };
-                  checkSearchComplete();
-                  $scope.$apply();
-                  $scope.qualifyFileList(source.id);
+                if (!$scope.requestStatus.searching) {
+                  $scope.requestStatus.setStatus("searching");
+                }
+                sourcesToComplete++;
+                $.get("api/source/" + source.id + "/search", {
+                  uid: $rootScope.user().uid,
+                  query: query,
+                  pageToken: $scope.nextSearchTokens[source.id],
+                  params: {
+                    orderBy: $scope.sorting.orderByStr(source.id)
+                  }
                 })
-                .fail(function(xhr, textStatus, error) {
-                  $scope.requestStatus.setStatus("errorLoading");
-                  $scope.$apply();
-                  console.log(xhr.responseText);
-                });
+                  .done(function(res) {
+                    $scope.nextSearchTokens = Object.assign(
+                      $scope.nextSearchTokens,
+                      { [source.id]: res.nextPageToken }
+                    );
+                    var list = res.files;
+                    list.forEach(file => {
+                      $scope.files.push(
+                        $scope.unifySourceFile(file.source, file.dat)
+                      );
+                    });
+                    $scope.openFolderCallback = () => {
+                      $rootScope.searching.search(
+                        $rootScope.searching.searchQuery,
+                        sourceId,
+                        true
+                      );
+                    };
+                    checkSearchComplete();
+                    $scope.$apply();
+                    $scope.qualifyFileList(source.id);
+                  })
+                  .fail(function(xhr, textStatus, error) {
+                    $scope.requestStatus.setStatus("errorLoading");
+                    $scope.$apply();
+                    console.log(xhr.responseText);
+                  });
+              } else {
+                $scope.requestStatus.setStatus("errorLoading");
+                $scope.$apply();
+              }
             }
           });
         },
         () => {
-          // TODO: message on sources load failure.
           $scope.requestStatus.setStatus("errorLoading");
-          console.log("Failed to get source list");
+          $rootScope.showPopup("error", "Couldn't load sources");
           $scope.$apply();
         }
       );
@@ -1186,7 +1337,7 @@ client.controller("filesCtrl", function(
           () => {}
         );
       } else if ($location.path() == "/files/search") {
-        $rootScope.searching.search($routeParams.q);
+        $rootScope.searching.search($routeParams.q, $routeParams.sourceId);
       } else {
         $scope.openFolder("all", "root");
       }
@@ -1207,7 +1358,45 @@ client.controller("filesCtrl", function(
     }
   };
   $scope.openFile = function(file, openInNewTab) {
-    var target = openInNewTab ? "_blank" : "_self";
+    var target;
+    if (!!$cookies.get("app.client.data.openFileInNewTab")) {
+      if ($cookies.get("app.client.data.openFileInNewTab") == "true") {
+        target = "_blank";
+      } else {
+        target = "_self";
+      }
+    } else {
+      $rootScope.showPopup(
+        "select",
+        "How do you want to open files?",
+        "Opening files in the same tab will force Binder to reload the current page.",
+        {
+          options: ["Open in current tab", "Open in new tab"],
+          selectedOption: -1,
+          selectOption: i => {
+            $rootScope.popup.selectedOption = i;
+          },
+          close: done => {
+            if (done) {
+              var cookieExpiry = new Date();
+              cookieExpiry.setFullYear(
+                cookieExpiry.getFullYear() + 1,
+                cookieExpiry.getMonth() + 1
+              );
+              $cookies.put(
+                "app.client.data.openFileInNewTab",
+                $rootScope.popup.selectedOption == 1,
+                { expires: cookieExpiry.toUTCString() }
+              );
+              $scope.openFile(file, openInNewTab);
+            }
+            $rootScope.popup = null;
+          }
+        }
+      );
+      return;
+    }
+    target = !!openInNewTab ? "_blank" : target;
     switch (file.source) {
       case "gdrive":
         $window.open(file.dat.webViewLink, target);
@@ -1216,9 +1405,10 @@ client.controller("filesCtrl", function(
         $window.open(file.dat.webUrl, target);
         break;
       case "dropbox":
-        $window.alert(
-          "Dropbox does not allow you to view files online from a external source.\n" +
-            "However, you can still download the file by right-clicking and selecting 'Download'"
+        $rootScope.showPopup(
+          "info",
+          "Dropbox does not allow you to view files online from a external source.\n",
+          "However, you can still download the file by right-clicking and selecting 'Download'"
         );
         break;
     }
@@ -1229,7 +1419,12 @@ client.controller("filesCtrl", function(
         text: "Preview",
         displayed: !file.isFolder,
         click: function($itemScope, $event, modelValue, text, $li) {
-          $window.alert("Feature disabled for now");
+          $rootScope.showPopup(
+            "info",
+            "Preview isn't available yet",
+            "Don't worry, it's currently under development :)"
+          );
+          //$scope.previewFile(file);
         }
       },
       {
@@ -1249,14 +1444,14 @@ client.controller("filesCtrl", function(
       {
         text: "Details",
         displayed: !file.isFolder,
-        click: function($itemScope) {
-          $scope.showFileDetails($scope.files[$itemScope.$index]);
+        click: function() {
+          $scope.showFileDetails(file);
         }
       },
       {
         text: "Download",
-        click: function($itemScope) {
-          $scope.downloadFile($scope.files[$itemScope.$index]);
+        click: function() {
+          $scope.downloadFile(file);
         }
       }
     ];
@@ -1419,7 +1614,7 @@ client.controller("filesCtrl", function(
             $window.open(JSON.parse(data).webContentLink, "_blank");
           })
           .fail(function(xhr, textStatus, error) {
-            $window.alert("Couldn't get download link");
+            $rootScope.showPopup("error", "Couldn't get download link");
             console.log(JSON.parse(xhr.responseText));
           });
         break;
@@ -1433,13 +1628,14 @@ client.controller("filesCtrl", function(
           })
             .done(function(data) {
               file.dat = Object.assign(file.dat, data);
-              if (data.malware) {
+              if (!data.malware) {
                 file = Object.assign(file, {
                   streamURL: data["@microsoft.graph.downloadUrl"]
                 });
                 $window.open(file.streamURL);
               } else {
-                $window.alert(
+                $rootScope.showPopup(
+                  "info",
                   "You may not download this file from Binder because it was found to contain malware."
                 );
               }
@@ -1455,14 +1651,156 @@ client.controller("filesCtrl", function(
         if (!file.isFolder) {
           $window.open(file.streamURL);
         } else {
-          $window.alert("Cannot download Dropbox folders");
+          $rootScope.showPopup(
+            "info",
+            "Cannot download Dropbox folders",
+            "Dropbox doesn't allow external apps to download entire folders. If you believe this is in error, please contact support."
+          );
         }
         break;
     }
   };
+  $scope.previewFile = function(file) {
+    console.log(file);
+    var submitPreview = () => {
+      var preview = {
+        type: file.dat.name.substr(file.dat.name.lastIndexOf(".") + 1),
+        file: file,
+        test: "html/testPdf.pdf",
+        supported: false,
+        loading: false,
+        onLoad: () => {
+          $rootScope.title = file.dat.name;
+        },
+        close: () => {
+          $rootScope.preview = null;
+          $rootScope.title = $route.current.title;
+        }
+      };
+      var supportedTypes = ["pdf", "docx"];
+      preview.supported = supportedTypes.includes(preview.type);
+      // if (file.source == "dropbox") {
+      //   delete preview.src;
+      //   preview.data = file.streamURL;
+      // }
+      $rootScope.preview = preview;
+      if (preview.type == "docx" && !!!file.preview) {
+        $rootScope.preview.loading = true;
+        $.get("api/util/docx-to-html", { url: file.streamURL })
+          .done(data => {
+            $rootScope.preview = Object.assign(preview, {
+              html: data
+            });
+            $rootScope.preview.loading = false;
+            console.log($rootScope.preview);
+            $scope.$apply();
+          })
+          .fail((xhr, textStatus, error) => {
+            $rootScope.preview.loading = false;
+            $rootScope.showPopup(
+              "error",
+              "Error while trying to generate preview",
+              xhr.responseText,
+              {
+                close: () => {
+                  $rootScope.popup = null;
+                  $rootScope.preview.close();
+                }
+              }
+            );
+            $scope.$apply();
+            console.log(xhr.responseText);
+          });
+      } else {
+        $rootScope.preview.type = "pdf";
+      }
+    };
+    if (!!!file.streamURL) {
+      if (file.source != "dropbox") {
+        var keys = [];
+        if (file.source == "gdrive") {
+          keys.push("webContentLink");
+        } else if (file.source == "onedrive") {
+          keys.push("@microsoft.graph.downloadUrl");
+        }
+        $.get("api/source/" + file.source + "/" + file.id + "/get_metadata", {
+          uid: $rootScope.user().uid,
+          keys: keys
+        })
+          .done(function(data) {
+            switch (file.source) {
+              case "gdrive":
+                file = Object.assign(file, {
+                  streamURL: data.webContentLink
+                });
+                break;
+              case "onedrive":
+                if (!data.malware) {
+                  file = Object.assign(file, {
+                    streamURL: data["@microsoft.graph.downloadUrl"]
+                  });
+                }
+                break;
+            }
+            submitPreview();
+            $scope.$apply();
+          })
+          .fail(function(xhr, textStatus, error) {
+            $rootScope.showPopup(
+              "error",
+              "Couldn't get file preview",
+              xhr.responseText
+            );
+            $scope.$apply();
+            console.log(JSON.parse(xhr.responseText));
+          });
+      } else {
+        $rootScope.showPopup(
+          "error",
+          "Preview window opened too early",
+          "Please try again in a few seconds."
+        );
+      }
+    } else {
+      submitPreview();
+    }
+  };
+  $scope.nextPageInView = function($inview) {
+    var loadUntilOutOfView;
+    var callCount = 0;
+    var tokenExists = () => {
+      if (callCount >= 5) {
+        return false;
+      }
+      if (!!$scope.nextPageToken) {
+        return true;
+      } else if (!!$scope.nextSearchTokens) {
+        for (let key in $scope.nextSearchTokens) {
+          if (!!$scope.nextSearchTokens[key]) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+    if ($inview) {
+      if (tokenExists()) {
+        loadUntilOutOfView = $interval(() => {
+          if (tokenExists()) {
+            callCount++;
+            $scope.openFolderCallback();
+          } else {
+            $interval.cancel(loadUntilOutOfView);
+          }
+        }, 2000);
+      }
+    } else if (!!loadUntilOutOfView) {
+      $interval.cancel(loadUntilOutOfView);
+    }
+  };
 });
 
-client.controller("accountCtrl", function(
+client.controller("settingsCtrl", function(
   $rootScope,
   $scope,
   $location,
@@ -1564,11 +1902,18 @@ client.controller("accountCtrl", function(
               );
               $window.open(response.data, "_self");
             } else {
-              $window.alert(source.name + " is already connected");
+              $rootScope.showPopup(
+                "info",
+                source.name + " is already connected"
+              );
             }
           },
           error => {
-            $window.alert("(" + error.status + ") -> " + error.data);
+            $rootScope.showPopup(
+              "error",
+              "Couldn't get connection URL (" + error.status + ")",
+              error.data
+            );
           }
         );
     }
@@ -1615,14 +1960,18 @@ client.controller("accountCtrl", function(
           });
           $scope.$apply();
           if (res.failedSources.length > 0) {
-            $window.alert(
-              "The following sources could not be updated:\n\n" +
-                res.failedSources.join(", ")
+            $rootScope.showPopup(
+              "error",
+              "The following sources could not be updated:",
+              res.failedSources.join(", ")
             );
           }
         })
         .fail(function(xhr, textStatus, error) {
-          $window.alert("Binder failed to change your access level settings.");
+          $rootScope.showPopup(
+            "error",
+            "Failed to change your access level settings"
+          );
           console.log(xhr.responseText);
         });
     }
@@ -1722,3 +2071,5 @@ client.controller("accountCtrl", function(
     }
   };
 });
+
+client.controller("previewPdfCtrl", function($scope, $rootScope) {});

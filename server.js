@@ -9,6 +9,7 @@ const sdb = require("./node/app.server.source");
 const onedrive = require("./node/app.server.source.onedrive");
 const dropbox = require("./node/app.server.source.dropbox");
 const email = require("./node/app.server.email");
+const util = require("./node/app.server.util");
 
 var app = express();
 
@@ -429,9 +430,10 @@ function listSourceFiles(req, res, sourceId, folderId) {
     req.query.uid,
     sourceId,
     folderId,
+    req.query.pageToken,
     req.query.params,
-    files => {
-      res.send(files);
+    (files, nextPageToken) => {
+      res.send({ files: files, nextPageToken: nextPageToken });
     },
     error => handleError(res, error)
   );
@@ -503,9 +505,10 @@ app.route("/api/source/:sourceId/search").get((req, res) => {
     req.query.uid,
     req.params.sourceId,
     req.query.query,
+    req.query.pageToken,
     req.query.params,
-    files => {
-      res.send(files);
+    (files, nextPageToken) => {
+      res.send({ files: files, nextPageToken: nextPageToken });
     },
     error => handleError(res, error)
   );
@@ -607,6 +610,21 @@ app.route("/api/source/dropbox/thumbnails").get((req, res) => {
       res.send(result.entries);
     },
     error => handleError(res, error)
+  );
+});
+
+app.route("/api/util/docx-to-html").get((req, res) => {
+  util.docxToHtml(
+    req.query.url,
+    req.query.buffer,
+    result => {
+      console.log(result.messages);
+      res.send(result.html);
+    },
+    error => {
+      console.log(error);
+      res.status(500).send(error);
+    }
   );
 });
 

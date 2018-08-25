@@ -214,20 +214,31 @@ function unAuthorize(uid, onSuccess, onFail) {
 
 exports.unAuthorize = unAuthorize;
 
-exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
+exports.listFiles = function(
+  uid,
+  folderId,
+  pageToken,
+  params,
+  onSuccess,
+  onFail
+) {
   var requestUrl = "/me/drive/items/" + folderId + "/children";
-  if (folderId == "root") {
-    requestUrl = "/drive/root/children";
-  }
-  requestUrl += "?select=id,name,folder,webUrl,size&top=25";
-  if (params) {
-    requestUrl +=
-      "&" +
-      Object.keys(params)
-        .map(function(key) {
-          return key.toLowerCase() + "=" + encodeURIComponent(params[key]);
-        })
-        .join("&");
+  if (!!pageToken) {
+    requestUrl = pageToken.replace(MICROSOFT_GRAPH_DOMAIN, "");
+  } else {
+    if (folderId == "root") {
+      requestUrl = "/drive/root/children";
+    }
+    requestUrl += "?select=id,name,folder,webUrl,size&top=25";
+    if (params) {
+      requestUrl +=
+        "&" +
+        Object.keys(params)
+          .map(function(key) {
+            return key.toLowerCase() + "=" + encodeURIComponent(params[key]);
+          })
+          .join("&");
+    }
   }
   sendRequest(uid, requestUrl, onSuccess, onFail);
 };
@@ -266,17 +277,21 @@ exports.getFileContent = function(uid, fileId, onSuccess, onFail) {
   sendRequest(uid, "/me/drive/items/" + fileId + "/content", onSuccess, onFail);
 };
 
-exports.search = function(uid, query, params, onSuccess, onFail) {
+exports.search = function(uid, query, pageToken, params, onSuccess, onFail) {
   var requestUrl = "/me/drive/root/search(q='" + query + "')";
-  requestUrl += "?select=id,name,folder,webUrl,size,searchResult&top=25";
-  if (params) {
-    requestUrl +=
-      "&" +
-      Object.keys(params)
-        .map(function(key) {
-          return key.toLowerCase() + "=" + encodeURIComponent(params[key]);
-        })
-        .join("&");
+  if (!!pageToken) {
+    requestUrl = pageToken.replace(MICROSOFT_GRAPH_DOMAIN, "");
+  } else {
+    requestUrl += "?select=id,name,folder,webUrl,size,searchResult&top=25";
+    if (params) {
+      requestUrl +=
+        "&" +
+        Object.keys(params)
+          .map(function(key) {
+            return key.toLowerCase() + "=" + encodeURIComponent(params[key]);
+          })
+          .join("&");
+    }
   }
   sendRequest(uid, requestUrl, onSuccess, onFail);
 };

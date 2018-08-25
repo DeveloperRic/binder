@@ -15,20 +15,44 @@
     <h3>Please report this!</h3>
   </div>
   <div class="source-tray" ng-if="!requestStatus.loadingSources && !requestStatus.errorLoading && sources.length != 0">
-    <div class="source-tile drop-shadow-light" ng-repeat="source in sources">
-      <div class="source-graphic-box">
-        <img class="source-graphic" ng-src="../css/img/{{source.id}}_lockup.png">
+    <div class="tile drop-shadow-light" ng-repeat="tile in tiles">
+      <div class="tile-box source-tile" ng-if="tile.type == 'files'">
+        <div class="source-graphic-box">
+          <img class="source-graphic" ng-src="../css/img/{{tile.source.id}}_lockup.png">
+        </div>
+        <div class="tile-status">
+          {{user.connectedSources.includes(tile.source.id) ? 'Connected' : 'Not connected'}}
+          <span ng-if="tile.source.id == 'dropbox'"><br/>*unstable*</span>
+        </div>
+        <a class="tile-enter" ng-href="/files?sourceId={{tile.source.id}}&folderId=root" ng-style="styles[tile.source.id]" ng-show="user.connectedSources.includes(tile.source.id)">
+          View files
+        </a>
+        <a class="tile-enter source-connect" ng-href="/connect?forceUpdate=true" ng-show="!user.connectedSources.includes(tile.source.id)">
+          Connect Source
+        </a>
       </div>
-      <div class="source-status">
-        {{user.connectedSources.includes(source.id) ? 'Connected' : 'Not connected'}}
-        <span ng-if="source.id == 'dropbox'"><br/>*unstable*</span>
+      <div class="tile-box" ng-if="tile.type == 'upload' && user.connectedSources.includes(tile.source.id)">
+        <div class="source-graphic-box">
+          <img class="source-graphic" ng-src="../css/img/{{tile.source.id}}_lockup.png">
+        </div>
+        <div class="tile-status center-content text-color-muted">
+          <i class="material-icons">file_upload</i>
+        </div>
+        <a class="tile-enter background-secondary text-color-primary">
+          Upload files *coming soon*
+        </a>
       </div>
-      <a class="source-enter" ng-href="/files?sourceId={{source.id}}&folderId=root" ng-style="styles[source.id]" ng-show="user.connectedSources.includes(source.id)">
-        View files
-      </a>
-      <a class="source-enter source-connect" ng-href="/connect?forceUpdate=true" ng-show="!user.connectedSources.includes(source.id)">
-        Connect Source
-      </a>
+      <div class="tile-box" ng-if="tile.type == 'search' && user.connectedSources.includes(tile.source.id)">
+        <div class="source-graphic-box">
+          <img class="source-graphic" ng-src="../css/img/{{tile.source.id}}_lockup.png">
+        </div>
+        <div class="tile-status center-content text-color-muted">
+          <i class="material-icons">search</i>
+        </div>
+        <a class="tile-enter background-secondary text-color-primary" ng-href="/files/search?q=root&sourceId={{tile.source.id}}">
+          Search
+        </a>
+      </div>
     </div>
   </div>
 </div>

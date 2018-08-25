@@ -244,7 +244,7 @@ exports.unAuthorize = function(uid, onSuccess, onFail) {
   });
 };
 
-exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
+exports.listFiles = function(uid, folderId, pageToken, params, onSuccess, onFail) {
   getAuth(
     uid,
     auth => {
@@ -253,6 +253,7 @@ exports.listFiles = function(uid, folderId, params, onSuccess, onFail) {
           {
             auth: auth,
             pageSize: 25,
+            pageToken: pageToken,
             q: "'" + folderId + "' in parents",
             fields:
               "nextPageToken, files(id, name, mimeType, webViewLink, iconLink, thumbnailLink)"

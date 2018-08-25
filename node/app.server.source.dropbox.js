@@ -166,17 +166,21 @@ exports.unAuthorize = function(uid, onSuccess, onFail) {
   });
 };
 
-exports.listFiles = function(uid, folderPath, onSuccess, onFail) {
-  sendRequest(
-    uid,
-    DROPBOX_API_DOMAIN + "/files/list_folder",
-    {
+exports.listFiles = function(uid, folderPath, cursor, onSuccess, onFail) {
+  var requestUrl = DROPBOX_API_DOMAIN + "/files/list_folder";
+  var requestParams;
+  if (!!cursor) {
+    requestUrl += "/continue";
+    requestParams = {
+      cursor: cursor
+    };
+  } else {
+    requestParams = {
       path: folderPath == "root" ? "" : folderPath,
       limit: 25
-    },
-    onSuccess,
-    onFail
-  );
+    };
+  }
+  sendRequest(uid, requestUrl, requestParams, onSuccess, onFail);
 };
 
 exports.getFileThumbnails = function(uid, filePaths, onSuccess, onFail) {
@@ -225,14 +229,14 @@ exports.getContentLink = function(uid, filePath, onSuccess, onFail) {
   );
 };
 
-exports.search = function(uid, query, onSuccess, onFail) {
+exports.search = function(uid, query, startIndex, onSuccess, onFail) {
   sendRequest(
     uid,
     DROPBOX_API_DOMAIN + "/files/search",
     {
       path: "",
       query: query,
-      start: 0,
+      start: !!startIndex ? startIndex : 0,
       max_results: 25,
       mode: "filename"
     },

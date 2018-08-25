@@ -114,6 +114,7 @@ exports.listFiles = function(
   uid,
   sourceId,
   folderId,
+  pageToken,
   params,
   onSuccess,
   onFail
@@ -124,12 +125,13 @@ exports.listFiles = function(
       gdrive.listFiles(
         uid,
         folderId,
+        pageToken,
         params,
         ({ data }) => {
           data.files.forEach(file => {
             allFiles.push({ source: "gdrive", dat: file });
           });
-          onSuccess(allFiles);
+          onSuccess(allFiles, data.nextPageToken);
         },
         onFail
       );
@@ -139,12 +141,13 @@ exports.listFiles = function(
       onedrive.listFiles(
         uid,
         folderId,
+        pageToken,
         params,
         data => {
           data.value.forEach(file => {
             allFiles.push({ source: "onedrive", dat: file });
           });
-          onSuccess(allFiles);
+          onSuccess(allFiles, data["@odata.nextLink"]);
         },
         onFail
       );
@@ -154,11 +157,12 @@ exports.listFiles = function(
       dropbox.listFiles(
         uid,
         folderId,
-        ({ entries }) => {
-          entries.forEach(file => {
+        pageToken,
+        data => {
+          data.entries.forEach(file => {
             allFiles.push({ source: "dropbox", dat: file });
           });
-          onSuccess(allFiles);
+          onSuccess(allFiles, data.has_more ? data.cursor : null);
         },
         onFail
       );
@@ -210,7 +214,15 @@ exports.updateFileMetadata = function(
   gdrive.updateFileMetadata(uid, fileId, metadata, onSuccess, onFail);
 };
 
-exports.search = function(uid, sourceId, query, params, onSuccess, onFail) {
+exports.search = function(
+  uid,
+  sourceId,
+  query,
+  pageToken,
+  params,
+  onSuccess,
+  onFail
+) {
   var allFiles = [];
   switch (sourceId) {
     case "gdrive":
@@ -218,12 +230,13 @@ exports.search = function(uid, sourceId, query, params, onSuccess, onFail) {
       gdrive.listFiles(
         uid,
         "root",
+        pageToken,
         Object.assign(params, { q: "fullText contains '" + query + "'" }),
         ({ data }) => {
           data.files.forEach(file => {
             allFiles.push({ source: "gdrive", dat: file });
           });
-          onSuccess(allFiles);
+          onSuccess(allFiles, data.nextPageToken);
         },
         onFail
       );
@@ -233,12 +246,13 @@ exports.search = function(uid, sourceId, query, params, onSuccess, onFail) {
       onedrive.search(
         uid,
         query,
+        pageToken,
         params,
         data => {
           data.value.forEach(file => {
             allFiles.push({ source: "onedrive", dat: file });
           });
-          onSuccess(allFiles);
+          onSuccess(allFiles, data["@odata.nextLink"]);
         },
         onFail
       );
@@ -248,11 +262,12 @@ exports.search = function(uid, sourceId, query, params, onSuccess, onFail) {
       dropbox.search(
         uid,
         query,
-        ({ matches }) => {
-          matches.forEach(match => {
+        pageToken,
+        data => {
+          data.matches.forEach(match => {
             allFiles.push({ source: "dropbox", dat: match.metadata });
           });
-          onSuccess(allFiles);
+          onSuccess(allFiles, data.more ? data.start : null);
         },
         onFail
       );

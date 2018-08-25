@@ -1,0 +1,119 @@
+<div id="accountStage" class="stage">
+  <div class="stage-title">
+    <h2>My account</h2>
+  </div>
+  <section class="container">
+    <h3 class="section-title">Sources</h3>
+    Click on a source to connect or disconnect it.
+    <div class="bubbles">
+      <div class="bubble" ng-repeat="source in sources" ng-class="{'bubble-negative': !sourceConnectedWrapper[source.id]}" ng-click="toggleSource(source)">
+        {{source.name}}
+        <span class="status">{{sourceConnectedWrapper[source.id] ? 'Connected' : 'Disconnected'}}</span>
+        <span class="status" ng-if="confirmSourceToggle.includes(source.id)">Click again to {{sourceConnectedWrapper[source.id]
+          ? 'disconnect' : 'connect'}}</span>
+      </div>
+      <div class="bubble bubble-fail" ng-if="sources.length == 0">
+        Failed to load sources
+        <span class="status">Please try again later</span>
+      </div>
+    </div>
+  </section>
+  <section class="container">
+    <h3 class="section-title">Profile</h3>
+    <form name="profileForm">
+      <table>
+        <tr>
+          <td>Firstname</td>
+          <td>
+            <div class="input">
+              <input type="text" name="firstname" ng-model="profile.firstname" />
+              <div class="label-floor"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>Lastname</td>
+          <td>
+            <div class="input">
+              <input type="text" name="lastname" ng-model="profile.lastname" />
+              <div class="label-floor"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <button type="submit" class="btn background-accent-light" ng-click="updateProfile()">Update profile</button>
+          </td>
+          <td>
+            <div class="profile-status" ng-show="profileStatus">{{profileStatus}}</div>
+          </td>
+        </tr>
+      </table>
+    </form>
+  </section>
+  <section class="container">
+    <h3 class="section-title">Email</h3>
+    <p>Because your email is required to sign in you must re-enter your account password in order to change it.</p>
+    <form name="accountForm">
+      <table>
+        <tr>
+          <td>Email Address</td>
+          <td>
+            <div class="input">
+              <input type="email" name="email" ng-model="profile.email" required placeholder="email@example.com" ng-blur="onEmailExit()"
+                ng-class="{'invalid-input': emailError.exists}" />
+              <div class="label-floor"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>Password</td>
+          <td>
+            <div class="input">
+              <input type="password" name="password" ng-model="profile.password" required />
+              <div class="label-floor"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <button type="submit" class="btn background-accent-light" ng-click="updateEmail()">Update email address</button>
+          </td>
+          <td>
+            <div class="profile-status" ng-show="!!emailStatus">{{emailStatus}}</div>
+          </td>
+        </tr>
+      </table>
+    </form>
+  </section>
+  <section id="accessLevels" class="container">
+    <h3 class="section-title important-title">Access Levels</h3>
+    <p>You are able to choose how much data Binder can access from your accounts.</p>
+    <p class="important-title">WARNING! Changing access levels will disconnect all sources from your account! You will have
+      to re-connect them manually.</p>
+    <div class="bubbles">
+      <div class="bubble" ng-class="{'bubble-fail': user.accessLevel != 0}" ng-click="setAccessLevel(0)">
+        Read only access
+        <span class="status">Limited capabilities</span>
+        <span class="status" ng-if="user.accessLevel == 0 && !confirmAccessLevel.includes(0)">(Selected)</span>
+        <span class="status" ng-if="user.accessLevel != 0 && confirmAccessLevel.includes(0)">Click again to select</span>
+      </div>
+      <div class="bubble" ng-class="{'bubble-fail': user.accessLevel != 1}" ng-click="setAccessLevel(1)">
+        Read/Write access
+        <span class="status">Everything enabled</span>
+        <span class="status" ng-if="user.accessLevel == 1 && !confirmAccessLevel.includes(1)">(Selected)</span>
+        <span class="status" ng-if="user.accessLevel != 1 && confirmAccessLevel.includes(1)">Click again to select</span>
+      </div>
+    </div>
+  </section>
+  <section class="container">
+    <h4 class="section-title important-title">Password</h4>
+    <p>The following link will email you with instructions on resetting your password.</p>
+    <button class="btn background-secondary important-title" ng-click="updateEmail()">Reset my password</button>
+  </section>
+  <section class="container">
+    <h4 class="section-title important-title">Delete Account</h4>
+    <p>If you're sure you want to delete your account, click the link below and instructions will be emailed to you.</p>
+    <button class="btn background-secondary important-title" ng-click="updateEmail()">Delete my account</button>
+  </section>
+</div>

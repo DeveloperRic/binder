@@ -26,7 +26,16 @@
 				</tr>
 			</table>
 			<div class="error" ng-show="error.exists">{{error.message}}</div>
-			<button type="submit" class="btn text-color-inverse background-accent" ng-click="login()">Login</button>
+			<br/>
+			<h4>Sign me in for:</h4>
+			<div class="duration-list">
+				<div class="duration-item" ng-repeat="dur in loginDurations" ng-click="selectLoginDuration($index)" ng-class="{'background-accent': selectedLoginDuration == $index, 'text-color-inverse': selectedLoginDuration == $index}">
+					{{dur[0]}}
+				</div>
+			</div>
+			<button type="submit" class="btn text-color-inverse background-accent" ng-click="login()">Sign in</button>
 		</form>
 	</div>
+	<div class="photo-credit">Background by <a href="https://unsplash.com/photos/7jQh3EiS8Bs?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+		 target="_blank">Oleg Laptev</a></div>
 </div>
