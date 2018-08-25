@@ -2,8 +2,7 @@ var client = angular.module("client", [
   "ngRoute",
   "ngCookies",
   "ui.bootstrap.contextMenu",
-  "angular-inview",
-  "pdfjsViewer"
+  "angular-inview"
 ]);
 
 const USER_SESSION_EXPIRATION_SECONDS = 3600;
