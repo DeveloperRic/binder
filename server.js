@@ -613,21 +613,6 @@ app.route("/api/source/dropbox/thumbnails").get((req, res) => {
   );
 });
 
-app.route("/api/util/docx-to-html").get((req, res) => {
-  util.docxToHtml(
-    req.query.url,
-    req.query.buffer,
-    result => {
-      console.log(result.messages);
-      res.send(result.html);
-    },
-    error => {
-      console.log(error);
-      res.status(500).send(error);
-    }
-  );
-});
-
 app.route("/api/email/:templateId/send").post((req, res) => {
   // email is disabled right now due to its current unstable nature
   //

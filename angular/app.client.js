@@ -1685,32 +1685,32 @@ client.controller("filesCtrl", function(
       // }
       $rootScope.preview = preview;
       if (preview.type == "docx" && !!!file.preview) {
-        $rootScope.preview.loading = true;
-        $.get("api/util/docx-to-html", { url: file.streamURL })
-          .done(data => {
-            $rootScope.preview = Object.assign(preview, {
-              html: data
-            });
-            $rootScope.preview.loading = false;
-            console.log($rootScope.preview);
-            $scope.$apply();
-          })
-          .fail((xhr, textStatus, error) => {
-            $rootScope.preview.loading = false;
-            $rootScope.showPopup(
-              "error",
-              "Error while trying to generate preview",
-              xhr.responseText,
-              {
-                close: () => {
-                  $rootScope.popup = null;
-                  $rootScope.preview.close();
-                }
-              }
-            );
-            $scope.$apply();
-            console.log(xhr.responseText);
-          });
+        // $rootScope.preview.loading = true;
+        // $.get("api/util/docx-to-html", { url: file.streamURL })
+        //   .done(data => {
+        //     $rootScope.preview = Object.assign(preview, {
+        //       html: data
+        //     });
+        //     $rootScope.preview.loading = false;
+        //     console.log($rootScope.preview);
+        //     $scope.$apply();
+        //   })
+        //   .fail((xhr, textStatus, error) => {
+        //     $rootScope.preview.loading = false;
+        //     $rootScope.showPopup(
+        //       "error",
+        //       "Error while trying to generate preview",
+        //       xhr.responseText,
+        //       {
+        //         close: () => {
+        //           $rootScope.popup = null;
+        //           $rootScope.preview.close();
+        //         }
+        //       }
+        //     );
+        //     $scope.$apply();
+        //     console.log(xhr.responseText);
+        //   });
       } else {
         $rootScope.preview.type = "pdf";
       }
