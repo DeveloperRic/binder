@@ -11,7 +11,7 @@
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link href="https://www.w3schools.com/w3css/4/w3.css" rel="stylesheet">
 	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
-	<link href="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/viewer.css" rel="stylesheet">
+	<!-- <link href="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/viewer.css" rel="stylesheet"> -->
 	<link href="../css/app.client.css" rel="stylesheet">
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
@@ -22,8 +22,8 @@
 
 	<script src="../modules/angular-bootstrap-contextmenu/contextMenu.js"></script>
 	<script src="../modules/angular-inview/angular-inview.js"></script>
-	<script src="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/pdf.js"></script>
-	<script src="../modules/angular-pdfjs-viewer/dist/angular-pdfjs-viewer.js"></script>
+	<!-- <script src="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/pdf.js"></script>
+	<script src="../modules/angular-pdfjs-viewer/dist/angular-pdfjs-viewer.js"></script> -->
 	<script src="../angular/app.client.js"></script>
 </head>
 
@@ -82,7 +82,7 @@
 			</div>
 			<div class="preview-main">
 				<div class="preview-main-pdf" ng-if="!preview.loading && preview.type == 'pdf'">
-					<pdfjs-viewer ng-prop-data="preview.file.preview" on-init="preview.onLoad()" print="false"></pdfjs-viewer>
+					<!-- <pdfjs-viewer ng-prop-data="preview.file.preview" on-init="preview.onLoad()" print="false"></pdfjs-viewer> -->
 				</div>
 				<div class="preview-main-html" ng-if="!preview.loading && preview.type == 'docx'">
 					{{preview.html}}
