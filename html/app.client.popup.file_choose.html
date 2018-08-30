@@ -1,0 +1,19 @@
+<div class="popup file-choose-popup drop-shadow-strong">
+  <div class="popup-close text-color-primary">
+    <i class="material-icons back" ng-if="popup.files.hasBack" ng-click="popup.navigate(-1)">arrow_back</i>
+    <h1 class="text-color-accent">{{popup.title}}</h1>
+    <div ng-click="popup.close()">
+      <i class="material-icons">close</i>
+      Cancel
+    </div>
+  </div>
+  <div class="file-list">
+    <div class="file-list-item" ng-repeat="file in popup.files.list" ng-click="popup.navigate($index)" ng-class="{'text-color-inverse': popup.selectedFile == $index}">
+      <i class="material-icons text-color-muted" ng-if="file.isFolder">folder</i>
+      {{file.dat.name}}
+    </div>
+  </div>
+  <div class="center-content" ng-show="popup.pageIndex != 0">
+    <button class="btn background-accent text-color-inverse" ng-click="popup.close(popup.selectedFile)">Move file</button>
+  </div>
+</div>

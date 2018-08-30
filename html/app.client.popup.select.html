@@ -2,11 +2,14 @@
   <div class="popup-close text-color-primary">
     <div ng-click="popup.close(false)">
       <i class="material-icons">close</i>
-      Close
+      Cancel
     </div>
   </div>
   <h1 class="text-color-accent">{{popup.title}}</h1>
-  <p class="text-color-muted">{{popup.details}}</p>
+  <p class="text-color-muted" ng-if="!popup.detailsArray">{{popup.details}}</p>
+  <p class="text-color-muted" ng-if="popup.detailsArray">
+    <span ng-repeat="line in popup.detailsArray">{{line}}<br ng-if="!$last"/></span>
+  </p>
   <div class="option-list">
     <div class="option" ng-repeat="option in popup.options" ng-click="popup.selectOption($index)" ng-class="{'background-accent text-color-inverse': popup.selectedOption == $index}">
       {{option}}

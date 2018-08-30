@@ -1,0 +1,17 @@
+<div class="popup input-popup drop-shadow-strong">
+  <div class="popup-close text-color-primary">
+    <div ng-click="popup.close()">
+      <i class="material-icons">close</i>
+      Cancel
+    </div>
+  </div>
+  <h1 class="text-color-accent">{{popup.title}}</h1>
+  <p class="text-color-muted" ng-show="popup.details">{{popup.details}}</p>
+  <div class="center-content">
+    <input class="background-color-secondary text-color-primary" type="{{popup.type}}" placeholder="{{popup.placeholder}}" ng-model="popup.newValue"
+    />
+  </div>
+  <div class="center-content" ng-show="popup.checkComplete(popup.newValue)">
+    <button class="btn background-accent text-color-inverse" ng-click="popup.close(popup.newValue)">Done</button>
+  </div>
+</div>

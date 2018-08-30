@@ -31,7 +31,7 @@
           Connect Source
         </a>
       </div>
-      <div class="tile-box" ng-if="tile.type == 'upload' && user.connectedSources.includes(tile.source.id)">
+      <div class="tile-box" ng-if="tile.type == 'upload'">
         <div class="source-graphic-box">
           <img class="source-graphic" ng-src="../css/img/{{tile.source.id}}_lockup.png">
         </div>
@@ -42,7 +42,7 @@
           Upload files
         </a>
       </div>
-      <div class="tile-box" ng-if="tile.type == 'search' && user.connectedSources.includes(tile.source.id)">
+      <div class="tile-box" ng-if="tile.type == 'search'">
         <div class="source-graphic-box">
           <img class="source-graphic" ng-src="../css/img/{{tile.source.id}}_lockup.png">
         </div>

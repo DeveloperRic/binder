@@ -164,6 +164,10 @@ ul {
   color: #424242;
 }
 
+#nav audio {
+  width: 100%;
+}
+
 #nav .account {
   display: flex;
   margin: 10px 10px 10px 10px;
@@ -531,12 +535,6 @@ ul {
   color: #757575;
 }
 
-#filesStage .label img {
-  max-height: 14px;
-  margin-left: 30px;
-  margin-bottom: 5px;
-}
-
 #filesStage .label .label-text {
   padding: 0px 5px;
 }
@@ -755,14 +753,15 @@ ul {
 }
 
 #filesStage #fileDetailsPane {
-  min-width: 320px;
-  max-width: 320px;
+  min-width: 300px;
+  max-width: 300px;
   min-height: 100%;
   max-height: 100%;
   margin-top: 20px;
   border-top: 1px solid #e0e0e0;
   border-left: 1px solid #e0e0e0;
   background-color: #eeeeee;
+  overflow: auto;
 }
 
 #filesStage #fileDetailsPane .file-close {
@@ -840,6 +839,11 @@ ul {
   color: #ffc107;
   cursor: pointer;
 }
+#filesStage #fileDetailsPane .file-info .file-info-updating {
+  height: unset;
+  padding: unset;
+  cursor: unset;
+}
 
 #filesStage #fileDetailsPane .file-info .version {
   font-size: 12px;
@@ -862,6 +866,7 @@ ul {
   .file-info-properties
   .modified
   .modified-time {
+  margin-right: 10px;
   flex-grow: 1;
   flex-wrap: wrap;
 }
@@ -976,6 +981,25 @@ ul {
   color: red;
 }
 
+.angular-fail {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  justify-content: center;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.angular-fail a {
+  color: #2196f3;
+}
+
+.angular-fail i {
+  font-size: 30px;
+}
+
 .background-accent {
   background-color: #4caf50;
 }
@@ -1008,6 +1032,24 @@ ul {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.context-menu-item {
+  display: flex;
+  padding: 10px;
+  align-items: center;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.context-menu-item:hover {
+  background-color: #eeeeee;
+}
+
+.context-menu-item i {
+  margin-left: 5px;
+  margin-right: 10px;
+  font-size: 22px;
 }
 
 .divider {
@@ -1111,8 +1153,15 @@ ul {
 }
 
 .popup .popup-close {
+  display: flex;
   margin-bottom: 20px;
-  text-align: end;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.popup .popup-close h1 {
+  margin: 0;
+  flex-grow: 1;
 }
 
 .popup .popup-close div {
@@ -1148,6 +1197,72 @@ ul {
 
 .select-popup .option-list .option + .option {
   margin-left: 10px;
+}
+
+.input-popup h1 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.input-popup input {
+  min-width: 50%;
+  width: fit-content;
+  max-width: 100%;
+  margin: 20px 0 25px;
+  padding: 5px 10px;
+  border: 1px dashed #212121;
+  color: #424242;
+}
+
+.file-choose-popup {
+  display: flex;
+  padding: 0;
+  flex-flow: column;
+}
+
+.file-choose-popup button {
+  margin-bottom: 20px;
+}
+
+.file-choose-popup .popup-close {
+  margin-top: 20px;
+  margin-bottom: 0;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.file-choose-popup .popup-close .back {
+  margin-right: 20px;
+  cursor: pointer;
+}
+
+.file-choose-popup .file-list {
+  display: flex;
+  padding-top: 10px;
+  padding-bottom: 20px;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  flex-grow: 1;
+  flex-flow: column;
+  overflow-y: auto;
+}
+
+.file-choose-popup .file-list .file-list-item {
+  display: flex;
+  width: 100%;
+  padding: 10px 20px;
+  align-items: center;
+  background-color: #eeeeee;
+  cursor: pointer;
+}
+
+.file-choose-popup .file-list .file-list-item:hover {
+  background-color: #e0e0e0;
+}
+
+.file-choose-popup .file-list .file-list-item i {
+  margin-right: 10px;
 }
 
 .previewContainer {
@@ -1218,6 +1333,10 @@ ul {
 .status-box .status-box-loading {
   animation: _status-box-rotation 1.5s infinite;
   color: #4caf50;
+}
+
+.status-box .status-box-error {
+  color: #f44336;
 }
 
 .text-center {

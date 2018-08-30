@@ -206,12 +206,44 @@ exports.getFileMetadata = function(
 
 exports.updateFileMetadata = function(
   uid,
+  sourceId,
   fileId,
   metadata,
   onSuccess,
   onFail
 ) {
-  gdrive.updateFileMetadata(uid, fileId, metadata, onSuccess, onFail);
+  switch (sourceId) {
+    case "gdrive":
+      gdrive.updateFileMetadata(
+        uid,
+        fileId,
+        metadata,
+        ({ data }) => {
+          onSuccess(data);
+        },
+        onFail
+      );
+      break;
+    case "onedrive":
+      onedrive.updateFileMetadata(uid, fileId, metadata, onSuccess, onFail);
+      break;
+
+    case "dropbox":
+      dropbox.updateFileMetadata(
+        uid,
+        fileId,
+        metadata,
+        ({ metadata }) => {
+          onSuccess(metadata);
+        },
+        onFail
+      );
+      break;
+
+    default:
+      failParser(400, "Sourceid (" + sourceId + ") is invalid", onFail);
+      return;
+  }
 };
 
 exports.search = function(

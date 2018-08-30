@@ -229,7 +229,7 @@ exports.listFiles = function(
     if (folderId == "root") {
       requestUrl = "/drive/root/children";
     }
-    requestUrl += "?select=id,name,folder,webUrl,size&top=25";
+    requestUrl += "?select=id,name,folder,webUrl,size,parentReference&top=25";
     if (params) {
       requestUrl +=
         "&" +
@@ -255,6 +255,32 @@ exports.getFileMetadata = function(uid, fileId, keys, onSuccess, onFail) {
     "/me/drive/items/" + fileId + "?select=" + fields,
     onSuccess,
     onFail
+  );
+};
+
+exports.updateFileMetadata = function(
+  uid,
+  fileId,
+  metadata,
+  onSuccess,
+  onFail
+) {
+  var fields = "id, name";
+  for (let key in metadata) {
+    if (!fields.includes(key)) {
+      fields += ", " + key;
+    }
+  }
+  sendRequest(
+    uid,
+    "/me/drive/items/" + fileId + "?select=" + fields,
+    onSuccess,
+    onFail,
+    {
+      method: "PATCH",
+      json: true,
+      body: metadata
+    }
   );
 };
 
@@ -296,7 +322,14 @@ exports.search = function(uid, query, pageToken, params, onSuccess, onFail) {
   sendRequest(uid, requestUrl, onSuccess, onFail);
 };
 
-function sendRequest(uid, requestUrl, onSuccess, onFail, refreshed) {
+function sendRequest(
+  uid,
+  requestUrl,
+  onSuccess,
+  onFail,
+  requestOptions,
+  refreshed
+) {
   getUserToken(
     uid,
     userToken => {
@@ -313,7 +346,14 @@ function sendRequest(uid, requestUrl, onSuccess, onFail, refreshed) {
           refreshAccessToken(
             uid,
             () => {
-              sendRequest(uid, requestUrl, onSuccess, onFail, true);
+              sendRequest(
+                uid,
+                requestUrl,
+                onSuccess,
+                onFail,
+                requestOptions,
+                true
+              );
             },
             onFail
           );
@@ -351,33 +391,35 @@ function sendRequest(uid, requestUrl, onSuccess, onFail, refreshed) {
         }
         return;
       }
-      // send the request via GET protocol
-      request.get(
-        MICROSOFT_GRAPH_DOMAIN + requestUrl,
+
+      var options = Object.assign(
         {
+          uri: MICROSOFT_GRAPH_DOMAIN + requestUrl,
+          method: "GET",
           headers: {
             Authorization: "Bearer " + userToken.token.access_token,
             Accept: "application/json"
           }
         },
-        (error, response, body) => {
-          var data = body;
-          try {
-            try {
-              data = JSON.parse(body);
-            } catch (err1) {}
-            if (!error && response.statusCode == 200) {
-              onSuccess(data);
-            } else {
-              onFail(parseErrorJSON(response.statusCode, data));
-            }
-          } catch (err) {
-            onFail({
-              errors: [{ code: 500, message: JSON.stringify(err) }]
-            });
-          }
-        }
+        requestOptions
       );
+      request(options, (error, response, body) => {
+        var data = body;
+        try {
+          try {
+            data = JSON.parse(body);
+          } catch (err1) {}
+          if (!error && response.statusCode == 200) {
+            onSuccess(data);
+          } else {
+            onFail(parseErrorJSON(response.statusCode, data));
+          }
+        } catch (err) {
+          onFail({
+            errors: [{ code: 500, message: JSON.stringify(err) }]
+          });
+        }
+      });
     },
     () => {
       failParser(

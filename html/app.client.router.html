@@ -45,6 +45,12 @@
 			</div>
 		</div>
 		<div class="divider"></div>
+		<div class="audio" ng-if="!!audio">
+			<audio id="navAudio" preload="none" controls>
+				<source data-ng-src="{{audio.src}}"> Your browser does not support the audio element.
+			</audio>
+		</div>
+		<div class="divider" ng-if="!!audio"></div>
 		<div class="account" ng-if="loggedInUser">
 			<div class="account-avatars">
 				<img ng-src="loggedInUser.avatar" ng-if="loggedInUser.profile.avatar">
@@ -101,6 +107,14 @@
 
 	<div class="popupContainer center-content" ng-if="!!popup">
 		<ng-include src="popup.popupView"></ng-include>
+	</div>
+
+	<div class="angular-fail" ng-if="false">
+		<div class="status-box">
+			<i class="material-icons">error_outline</i>
+			<h1>Binder has crashed :(</h1>
+			<h3><a href="/">Click to go to the home page</a></h3>
+		</div>
 	</div>
 </body>
 

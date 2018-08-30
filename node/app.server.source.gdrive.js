@@ -244,7 +244,14 @@ exports.unAuthorize = function(uid, onSuccess, onFail) {
   });
 };
 
-exports.listFiles = function(uid, folderId, pageToken, params, onSuccess, onFail) {
+exports.listFiles = function(
+  uid,
+  folderId,
+  pageToken,
+  params,
+  onSuccess,
+  onFail
+) {
   getAuth(
     uid,
     auth => {
@@ -256,7 +263,7 @@ exports.listFiles = function(uid, folderId, pageToken, params, onSuccess, onFail
             pageToken: pageToken,
             q: "'" + folderId + "' in parents",
             fields:
-              "nextPageToken, files(id, name, mimeType, webViewLink, iconLink, thumbnailLink)"
+              "nextPageToken, files(id, name, mimeType, webViewLink, iconLink, thumbnailLink, parents)"
           },
           params
         ),
@@ -353,11 +360,19 @@ exports.updateFileMetadata = function(
   getAuth(
     uid,
     auth => {
+      var fields = "id, name";
+      for (let key in metadata) {
+        if (!fields.includes(key)) {
+          fields += ", " + key;
+        }
+      }
       drive.files.update(
         {
           auth: auth,
           fileId: fileId,
-          metadata: metadata
+          uploadType: "multipart",
+          resource: metadata,
+          fields: fields
         },
         (err, res) => {
           if (err) {

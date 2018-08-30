@@ -13,13 +13,6 @@ var selectedRedirectURI;
 // TODO: enable cross-site request forgery protection
 // see: https://www.dropbox.com/developers/documentation/http/documentation#oauth2-authorize
 
-// TODO: implement scopes for access tokens
-// If modifying a user's scope, delete their credentials from database.
-// const SCOPE_LEVELS = [
-//   ["https://www.googleapis.com/auth/drive.metadata.readonly"],
-//   ["https://www.googleapis.com/auth/drive"]
-// ];
-
 exports.init = function() {
   // Load app secret from a local file.
   fs.readFile(
@@ -181,6 +174,42 @@ exports.listFiles = function(uid, folderPath, cursor, onSuccess, onFail) {
     };
   }
   sendRequest(uid, requestUrl, requestParams, onSuccess, onFail);
+};
+
+exports.updateFileMetadata = function(
+  uid,
+  filePath,
+  metadata,
+  onSuccess,
+  onFail
+) {
+  if (Object.keys(metadata).length != 1) {
+    return failParser(
+      400,
+      "Binder-Dropbox API can only update 1 metadata item at a time.",
+      onFail
+    );
+  }
+  var key = Object.keys(metadata)[0];
+  switch (key) {
+    case "name":
+      sendRequest(
+        uid,
+        DROPBOX_API_DOMAIN + "/files/move_v2",
+        {
+          from_path: filePath,
+          to_path: metadata.name,
+          allow_shared_folder: true,
+          autorename: false,
+          allow_ownership_transfer: false
+        },
+        onSuccess,
+        onFail
+      );
+      break;
+    default:
+      failParser(400, "Metadata key (" + key + ") is not supported.", onFail);
+  }
 };
 
 exports.getFileThumbnails = function(uid, filePaths, onSuccess, onFail) {

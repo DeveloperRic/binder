@@ -19,6 +19,7 @@ var app = express();
 //   - app.server.source.onedrive.js
 //
 // TODO: DON'T FORGET TO RESTRICT APP_SECRET ORIGINS FOR ALL SOURCES
+// TODO: verify GDrive/Onedrive/Dropbox Oauth with privacy policy etc.
 
 //app.use("/node", express.static("./node"));
 app.use("/angular", express.static("./angular"));
@@ -463,14 +464,22 @@ app.route("/api/source/:sourceId/:fileId/get_metadata").get((req, res) => {
   );
 });
 
-app.route("/api/source/gdrive/:fileId/update_metadata").post((req, res) => {
-  // TODO metadata updates should work for all sources
+app.route("/api/source/:sourceId/:fileId/update_metadata").post((req, res) => {
+  updateFileMetadata(req, res, req.params.sourceId, req.params.fileId);
+});
+
+app.route("/api/source/dropbox/update_metadata").post((req, res) => {
+  updateFileMetadata(req, res, "dropbox", req.body.filePath);
+});
+
+function updateFileMetadata(req, res, sourceId, fileId) {
   if (
     !verifyParams(
       res,
-      ["body.uid", "params.fileId", "body.metadata"],
+      ["body.uid", "sourceId", "fileId/filePath", "body.metadata"],
       req.body.uid,
-      req.params.fileId,
+      sourceId,
+      fileId,
       req.body.metadata
     )
   ) {
@@ -478,14 +487,15 @@ app.route("/api/source/gdrive/:fileId/update_metadata").post((req, res) => {
   }
   sdb.updateFileMetadata(
     req.body.uid,
-    req.params.fileId,
+    sourceId,
+    fileId,
     req.body.metadata,
-    ({ data }) => {
+    data => {
       res.send(data);
     },
     error => handleError(res, error)
   );
-});
+}
 
 app.route("/api/source/:sourceId/search").get((req, res) => {
   if (
@@ -613,6 +623,7 @@ app.route("/api/source/dropbox/thumbnails").get((req, res) => {
 });
 
 app.route("/api/email/:templateId/send").post((req, res) => {
+  // TODO email!
   // email is disabled right now due to its current unstable nature
   //
   // update this vvv

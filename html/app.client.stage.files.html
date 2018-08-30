@@ -1,5 +1,5 @@
 <div id="filesStage" class="stage">
-  <div class="main-pane" in-view-container>
+  <div class="main-pane" ng-click="onMainPaneClick()" in-view-container>
     <div class="labelStrip">
       <div class="label">
         <div class="label-text">
@@ -10,9 +10,6 @@
           </div>
           <div class="invisible label-floor"></div>
         </div>
-        <img class="currentFolderSource" ng-if="currentFolderSource=='dropbox'" src="../css/img/dropbox_lockup.png">
-        <img class="currentFolderSource" ng-if="currentFolderSource=='gdrive'" src="../css/img/gdrive_lockup.png">
-        <img class="currentFolderSource" ng-if="currentFolderSource=='onedrive'" src="../css/img/onedrive_lockup.png">
       </div>
       <div class="sorting label" ng-if="currentFolderSource && currentFolder">
         <div class="label-text inline">
@@ -91,8 +88,8 @@
     </div>
   </div>
 
-  <div id="fileDetailsPane" class="ng-hide">
-    <div class="file-close" ng-click="onMainPaneClick()">
+  <div id="fileDetailsPane" ng-show="!!detailsFile">
+    <div class="file-close" ng-click="closeFileDetailsPane()">
       <i class="material-icons">close</i>
       Close
     </div>
@@ -113,9 +110,13 @@
       <div>
         <div class="file-info-head">
           <span class="file-info-title" ng-click="openFile(detailsFile, true)">{{detailsFile.dat.name}}</span>
-          <div class="file-info-starred" ng-click="toggleFileStarred(detailsFile)" ng-if="detailsFile.source=='gdrive'">
-            <i class="material-icons" ng-show="detailsFile.dat.starred" ng-click="toggleStarred(false)">star</i>
-            <i class="material-icons" ng-show="!detailsFile.dat.starred" ng-click="toggleStarred(true)">star_border</i>
+          <div class="file-info-starred" ng-click="toggleFileStarred(detailsFile)" ng-if="detailsFile.source=='gdrive' && !updatingFile">
+            <i class="material-icons" ng-if="detailsFile.dat.starred" ng-click="toggleFileStarred(detailsFile)">star</i>
+            <i class="material-icons" ng-if="!detailsFile.dat.starred" ng-click="toggleToggleStarred(detailsFile)">star_border</i>
+          </div>
+          <div class="status-box file-info-starred file-info-updating" ng-if="updatingFile || errorUpdatingFile">
+            <i class="status-box-loading material-icons" ng-if="!errorUpdatingFile">autorenew</i>
+            <i class="status-box-error material-icons" ng-if="errorUpdatingFile">error</i>
           </div>
         </div>
         <h4>{{detailsFile.dat.description}}</h4>
@@ -123,7 +124,7 @@
       </div>
       <div class="file-info-audio" ng-if="detailsFile.dat.audio">
         <audio id="fileInfoAudio" preload="none" controls>
-          <source data-ng-src="{{detailsFile.streamURL}}">
+          <source data-ng-src="{{detailsFile.streamURL}}"> Your browser does not support the audio element.
         </audio>
       </div>
       <div class="file-info-properties">
