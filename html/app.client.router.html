@@ -9,7 +9,6 @@
 
 	<link href="https://fonts.googleapis.com/css?family=Montserrat|Open+Sans" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-	<link href="https://www.w3schools.com/w3css/4/w3.css" rel="stylesheet">
 	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
 	<!-- <link href="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/viewer.css" rel="stylesheet"> -->
 	<link href="../css/app.client.css" rel="stylesheet">
@@ -29,7 +28,32 @@
 
 <body>
 	<div class="background"></div>
-	<div id="nav" ng-if="!hideNavBar">
+	<div id="smallnav" ng-if="!hideNavBar && !navExpanded">
+		<div class="nav-title text-color-primary">Binder</div>
+		<div class="divider"></div>
+		<div class="nav-icons">
+			<a class="nav-icon" ng-if="searching" href="/dashboard">
+				<i class="material-icons">home</i>
+			</a>
+			<a class="nav-icon nav-search" ng-if="searching" href="/files/search">
+				<i class="material-icons">search</i>
+			</a>
+			<a class="nav-icon drop-shadow-light" ng-repeat="icon in navButtons" ng-href="/files?sourceId={{icon.source}}&folderId={{icon.folder}}">
+				<img ng-src="../css/img/{{icon.source}}_icon_large.png">
+			</a>
+		</div>
+		<div class="divider"></div>
+		<div class="audio" ng-if="!!audio">
+			<i class="material-icons">play_arrow</i>
+		</div>
+		<div class="divider" ng-if="!!audio"></div>
+		<a class="nav-account text-color-primary" ng-if="!!loggedInUser" href="/settings">
+			<img ng-src="loggedInUser.avatar" ng-if="loggedInUser.profile.avatar">
+			<i class="material-icons" ng-if="!loggedInUser.profile.avatar">face</i>
+			Settings
+		</a>
+	</div>
+	<div id="nav" ng-if="!hideNavBar && navExpanded">
 		<div class="nav-title text-color-primary">Binder</div>
 		<div class="divider"></div>
 		<div class="nav-buttons">

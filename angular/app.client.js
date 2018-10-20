@@ -216,6 +216,11 @@ client.run(function($rootScope, $location, $cookies, $window, $interval) {
   ) {
     //Change page title, based on Route information
     if (
+      $location.path().startsWith("/files/search") &&
+      !!currentRoute.params.q
+    ) {
+      $rootScope.title = "Search \"" + currentRoute.params.q + "\" - Binder";
+    } else if (
       $location.path().startsWith("/files") &&
       !!currentRoute.params.sourceId
     ) {
@@ -226,6 +231,7 @@ client.run(function($rootScope, $location, $cookies, $window, $interval) {
               "Binder",
               sources[i].name
             );
+            break;
           }
         }
       });
@@ -1441,7 +1447,25 @@ client.controller("filesCtrl", function(
           () => {}
         );
       } else if ($location.path() == "/files/search") {
-        $rootScope.searching.search($routeParams.q, $routeParams.sourceId);
+        if ($routeParams.q) {
+          $rootScope.searching.search($routeParams.q, $routeParams.sourceId);
+        } else {
+          $rootScope.showPopup("input", "Search", "find files everywhere", {
+            type: "text",
+            placeholder: "What're you looking for?",
+            newValue: "",
+            checkComplete: q => {
+              return q;
+            },
+            close: q => {
+              $rootScope.popup = null;
+              if (!!q) {
+                $rootScope.searching.search(q);
+              }
+            }
+          });
+          $scope.requestStatus.setStatus("");
+        }
       } else {
         $scope.openFolder("all", "root");
       }
@@ -1469,7 +1493,7 @@ client.controller("filesCtrl", function(
       } else {
         target = "_self";
       }
-    } else {
+    } else if (!openInNewTab) {
       $rootScope.showPopup("select", "How do you want to open files?", null, {
         detailsArray: [
           "Opening files in the same tab will force Binder to reload the current page.",
@@ -1511,7 +1535,7 @@ client.controller("filesCtrl", function(
         $rootScope.showPopup(
           "info",
           "Dropbox does not allow you to view files online from an external source.\n",
-          "However, you can still download the file by right-clicking and selecting 'Download'"
+          "However, you can still download the file by right-clicking and selecting 'Download'."
         );
         break;
     }
@@ -1529,7 +1553,7 @@ client.controller("filesCtrl", function(
     var menu = [
       {
         html: fileContextMenuItemHTML("picture_in_picture", "Preview"),
-        displayed: !file.isFolder,
+        displayed: false, // !file.isFolder
         click: function($itemScope, $event, modelValue, text, $li) {
           $rootScope.showPopup(
             "info",

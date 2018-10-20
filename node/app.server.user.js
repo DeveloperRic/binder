@@ -259,23 +259,17 @@ exports.updateProfile = function(uid, newValue, onSuccess, onFail) {
 };
 
 exports.getNavigation = function(uid, onSuccess, onFail) {
-  var nav = [
-    {
-      page: "dashboard",
-      text: "Home"
-    }
-  ];
+  var nav = [];
   this.getUserWithUID(
     uid,
     user => {
       sdb.sources.forEach(source => {
         if (user.connectedSources.includes(source.id)) {
-          var navItem = {
+          nav.push({
             source: source.id,
             folder: "root",
             text: source.name
-          };
-          nav.push(navItem);
+          });
         }
       });
       onSuccess(nav);
