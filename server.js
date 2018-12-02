@@ -681,6 +681,7 @@ app.route("/*").get((req, res) => {
         root: "./html"
       });
     } else {
+      console.log("couldn't find file: " + path);
       res.sendFile("app.client.landing.html", { root: "./html" });
     }
   });
