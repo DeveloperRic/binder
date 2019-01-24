@@ -3,7 +3,7 @@ Consolidate all your files on the cloud.
 
 Binder is a web app made up of a Node.js server backend and an Angularjs frontend. Its purpose is to create a single location where you can view files from different storage providers. It is not a provider in itself, it's just a window to other providers.
 
-You can view the live web-app at [binderapp.xyz](binderapp.xyz)
+You can view the live web-app at [binderapp.xyz](https://binderapp.xyz)
 
 ### Warnings
 
