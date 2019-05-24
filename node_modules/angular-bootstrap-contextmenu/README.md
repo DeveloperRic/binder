@@ -19,6 +19,7 @@ Add a reference to `contextMenu.js`. In your app config add `ui.bootstrap.contex
 - `context-menu-class` - A string literal containing a custom class to be added to the context menu (The &lt;ul&gt; elements)
 - `allow-event-propagation` - (Default: false) A boolean determining whether to allow event propagation. Note that if you set this to true, and don’t catch it with something else the browser’s context menu will be shown on top of this library’s context menu.
 - `model` - (See Model Attribute below)
+- `close-menu-on` - (Default: '') A string literal containing event for triggering menu close action.
 
 ### View
 
@@ -94,6 +95,7 @@ Every menu option is represented by an Object containing the following propertie
 | -------- | ---- | ----------- |
 | text | Function/String | A function that returns the string or the actual string itself. Either text or html must be specified |
 | html | Function/String | A function or string that returns the html to be used for this menu option. Either text or html must be specified |
+| compile | Boolean | To compile html string to use a custom directive in the html string |
 | click | Function | The function to be called on click of the option|
 | enabled | Function/Boolean | A function returning whether the option is enabled or not, or a boolean |
 | displayed | Function/Boolean | A function returning whether the option is displayed or not, or a boolean. If not displayed, no element is created at all and nothing related to the item will be executed (events, functions returning children, etc.) |
