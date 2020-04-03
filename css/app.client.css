@@ -86,7 +86,7 @@ ul {
   list-style-type: none;
 }
 
-#nav {
+/* #nav {
   display: inline-flex;
   min-width: 200px;
   max-width: 200px;
@@ -195,9 +195,9 @@ ul {
   margin-left: 5px;
   margin-right: 5px;
   cursor: default;
-}
+} */
 
-#smallnav {
+#nav {
   display: inline-flex;
   width: 100px;
   height: 100vh;
@@ -207,14 +207,14 @@ ul {
   flex-direction: column;
 }
 
-#smallnav .nav-title {
+#nav .nav-title {
   padding: 20px;
   font-family: "Montserrat", sans-serif;
   font-size: 16px;
   font-weight: 700;
 }
 
-#smallnav .nav-icons {
+#nav .nav-icons {
   display: flex;
   margin: 10px 0;
   padding: 0 15px;
@@ -224,7 +224,7 @@ ul {
   overflow-y: auto;
 }
 
-#smallnav .nav-icon {
+#nav .nav-icon {
   display: flex;
   min-width: 5rem;
   min-height: 5rem;
@@ -240,44 +240,44 @@ ul {
   background-color: #f5f5f5;
 }
 
-#smallnav .nav-icon:hover {
+#nav .nav-icon:hover {
   border: 1px solid #2e7d32;
 }
 
-#smallnav .nav-icon + .nav-icon {
+#nav .nav-icon + .nav-icon {
   margin-top: 30px;
 }
 
-#smallnav .nav-icon a {
+#nav .nav-icon a {
   font-family: "Montserrat", sans-serif;
   color: #2e7d32;
 }
 
-#smallnav .nav-icon i {
+#nav .nav-icon i {
   font-size: 2.3rem;
   color: #393f44;
 }
 
-#smallnav .nav-icon i:hover {
+#nav .nav-icon i:hover {
   color: #424242;
 }
 
-#smallnav .nav-icon img {
+#nav .nav-icon img {
   max-width: 3rem;
   max-height: 3rem;
   object-fit: cover;
 }
 
-#smallnav .nav-search {
+#nav .nav-search {
   display: flex;
 }
 
-#smallnav .nav-search .nav-icon {
+#nav .nav-search .nav-icon {
   border: 1px dashed #393f44;
   align-items: center;
 }
 
-#smallnav .nav-search .nav-search-input {
+#nav .nav-search .nav-search-input {
   display: inline-flex;
   margin-left: 15px;
   padding: 7px 10px;
@@ -287,16 +287,16 @@ ul {
   background-color: #424242;
 }
 
-#smallnav .nav-search .nav-search-input form {
+#nav .nav-search .nav-search-input form {
   flex-grow: 1;
   margin: 0px;
 }
 
-#smallnav .nav-search .nav-search-input input {
+#nav .nav-search .nav-search-input input {
   background-color: inherit;
 }
 
-#smallnav .nav-account {
+#nav .nav-account {
   display: flex;
   padding: 10px;
   flex-flow: column;
@@ -307,13 +307,17 @@ ul {
   cursor: pointer;
 }
 
-#smallnav .nav-account:hover i {
+#nav .nav-account:hover i {
   color: #424242;
 }
 
-#smallnav .nav-account i {
+#nav .nav-account i {
   font-size: 3rem;
   color: #757575;
+}
+
+#smallnav {
+  display: none;
 }
 
 #welcomeStage {

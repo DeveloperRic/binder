@@ -1,145 +1,217 @@
 <html ng-app="client">
+  <head>
+    <base href="/" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<head>
-	<base href="/">
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+    <title ng-bind="$root.title">Binder</title>
 
-	<title ng-bind="$root.title">Binder</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Montserrat|Open+Sans"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!--
+      <link href="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/viewer.css" rel="stylesheet">
+    -->
+    <link href="../css/app.client.css" rel="stylesheet" />
+    <link href="../css/app.client.mobile.css" rel="stylesheet" />
 
-	<link href="https://fonts.googleapis.com/css?family=Montserrat|Open+Sans" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
-	<!-- <link href="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/viewer.css" rel="stylesheet"> -->
-	<link href="../css/app.client.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.2/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.2/angular-route.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.2/angular-cookies.js"></script>
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.2/angular.min.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.2/angular-route.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.2/angular-cookies.js"></script>
+    <script src="../modules/angular-bootstrap-contextmenu/contextMenu.js"></script>
+    <script src="../modules/angular-inview/angular-inview.js"></script>
+    <!--
+      <script src="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/pdf.js"></script>
+      <script src="../modules/angular-pdfjs-viewer/dist/angular-pdfjs-viewer.js"></script>
+    -->
+    <script src="../angular/app.client.js"></script>
+  </head>
 
-	<script src="../modules/angular-bootstrap-contextmenu/contextMenu.js"></script>
-	<script src="../modules/angular-inview/angular-inview.js"></script>
-	<!-- <script src="../modules/angular-pdfjs-viewer/bower_components/pdf.js-viewer/pdf.js"></script>
-	<script src="../modules/angular-pdfjs-viewer/dist/angular-pdfjs-viewer.js"></script> -->
-	<script src="../angular/app.client.js"></script>
-</head>
+  <body>
+    <div class="background"></div>
+    <div id="nav" ng-if="!hideNavBar && !navExpanded">
+      <div class="nav-title text-color-primary">Binder</div>
+      <div class="divider"></div>
+      <div class="nav-icons">
+        <a class="nav-icon" ng-if="searching" href="/dashboard">
+          <i class="material-icons">home</i>
+        </a>
+        <a class="nav-icon nav-search" ng-if="searching" href="/files/search">
+          <i class="material-icons">search</i>
+        </a>
+        <a
+          class="nav-icon drop-shadow-light"
+          ng-repeat="icon in navButtons"
+          ng-href="/files?sourceId={{icon.source}}&folderId={{icon.folder}}"
+        >
+          <img ng-src="../css/img/{{icon.source}}_icon_large.png" />
+        </a>
+      </div>
+      <div class="divider"></div>
+      <div class="audio" ng-if="!!audio">
+        <i class="material-icons">play_arrow</i>
+      </div>
+      <div class="divider" ng-if="!!audio"></div>
+      <a
+        class="nav-account text-color-primary"
+        ng-if="!!loggedInUser"
+        href="/settings"
+      >
+        <img ng-src="loggedInUser.avatar" ng-if="loggedInUser.profile.avatar" />
+        <i class="material-icons" ng-if="!loggedInUser.profile.avatar">face</i>
+        Settings
+      </a>
+    </div>
+    <!--
+      <div id="nav" ng-if="!hideNavBar && navExpanded">
+      	<div class="nav-title text-color-primary">Binder</div>
+      	<div class="divider"></div>
+      	<div class="nav-buttons">
+      		<div class="nav-button nav-search" ng-if="searching">
+      			<form ng-submit="searching.search(searching.searchQuery, searching.searchSource)">
+      				<input type="text" placeholder="Search" ng-model="searching.searchQuery" />
+      			</form>
+      			<a title="Search for {{searching.searchQuery}}"><i class="material-icons" ng-click="searching.search(searching.searchQuery, searching.searchSource)">search</i></a>
+      		</div>
+      		<div class="nav-button background-accent-light" ng-repeat="item in navButtons">
+      			<a ng-if="item.folder" ng-href="/files?sourceId={{item.source}}&folderId={{item.folder}}">{{item.text}}</a>
+      			<a ng-if="item.page" ng-href="/{{item.page}}">{{item.text}}</a>
+      		</div>
+      	</div>
+      	<div class="divider"></div>
+      	<div class="audio" ng-if="!!audio">
+      		<audio id="navAudio" preload="none" controls>
+      			<source data-ng-src="{{audio.src}}"> Your browser does not support the audio element.
+      		</audio>
+      	</div>
+      	<div class="divider" ng-if="!!audio"></div>
+      	<div class="account" ng-if="loggedInUser">
+      		<div class="account-avatars">
+      			<img ng-src="loggedInUser.avatar" ng-if="loggedInUser.profile.avatar">
+      			<i class="material-icons account-avatar" ng-if="!loggedInUser.profile.avatar">face</i>
+      		</div>
+      		<div>
+      			<div class="account-name">
+      				{{loggedInUser.profile.firstname}} {{loggedInUser.profile.lastname}}
+      			</div>
+      			<div class="account-actions">
+      				<a class="text-color-primary" href="/settings">Settings</a>
+      				<span class="action-separator text-color-muted">●</span>
+      				<a class="text-color-primary" href="" ng-click="logoutUser()">Logout</a>
+      			</div>
+      		</div>
+      	</div>
+      </div>
+    -->
+    <div id="smallnav" ng-if="!hideNavBar && !navExpanded">
+      <i class="material-icons">menu</i>
+      <div class="smallnav-title text-color-muted">Binder</div>
+      <!-- <div class="smallnav-icons">
+        <a class="smallnav-icon" ng-if="searching" href="/dashboard">
+          <i class="material-icons">home</i>
+        </a>
+        <a class="smallnav-icon smallnav-search" ng-if="searching" href="/files/search">
+          <i class="material-icons">search</i>
+        </a>
+        <a
+          class="smallnav-icon drop-shadow-light"
+          ng-repeat="icon in smallnavButtons"
+          ng-href="/files?sourceId={{icon.source}}&folderId={{icon.folder}}"
+        >
+          <img ng-src="../css/img/{{icon.source}}_icon_large.png" />
+        </a>
+      </div>
+      <div class="divider"></div>
+      <div class="audio" ng-if="!!audio">
+        <i class="material-icons">play_arrow</i>
+      </div>
+      <div class="divider" ng-if="!!audio"></div>
+      <a
+        class="smallnav-account text-color-primary"
+        ng-if="!!loggedInUser"
+        href="/settings"
+      >
+        <img ng-src="loggedInUser.avatar" ng-if="loggedInUser.profile.avatar" />
+        <i class="material-icons" ng-if="!loggedInUser.profile.avatar">face</i>
+        Settings
+      </a> -->
+    </div>
 
-<body>
-	<div class="background"></div>
-	<div id="smallnav" ng-if="!hideNavBar && !navExpanded">
-		<div class="nav-title text-color-primary">Binder</div>
-		<div class="divider"></div>
-		<div class="nav-icons">
-			<a class="nav-icon" ng-if="searching" href="/dashboard">
-				<i class="material-icons">home</i>
-			</a>
-			<a class="nav-icon nav-search" ng-if="searching" href="/files/search">
-				<i class="material-icons">search</i>
-			</a>
-			<a class="nav-icon drop-shadow-light" ng-repeat="icon in navButtons" ng-href="/files?sourceId={{icon.source}}&folderId={{icon.folder}}">
-				<img ng-src="../css/img/{{icon.source}}_icon_large.png">
-			</a>
-		</div>
-		<div class="divider"></div>
-		<div class="audio" ng-if="!!audio">
-			<i class="material-icons">play_arrow</i>
-		</div>
-		<div class="divider" ng-if="!!audio"></div>
-		<a class="nav-account text-color-primary" ng-if="!!loggedInUser" href="/settings">
-			<img ng-src="loggedInUser.avatar" ng-if="loggedInUser.profile.avatar">
-			<i class="material-icons" ng-if="!loggedInUser.profile.avatar">face</i>
-			Settings
-		</a>
-	</div>
-	<div id="nav" ng-if="!hideNavBar && navExpanded">
-		<div class="nav-title text-color-primary">Binder</div>
-		<div class="divider"></div>
-		<div class="nav-buttons">
-			<div class="nav-button nav-search" ng-if="searching">
-				<form ng-submit="searching.search(searching.searchQuery, searching.searchSource)">
-					<input type="text" placeholder="Search" ng-model="searching.searchQuery" />
-				</form>
-				<a title="Search for {{searching.searchQuery}}"><i class="material-icons" ng-click="searching.search(searching.searchQuery, searching.searchSource)">search</i></a>
-			</div>
-			<div class="nav-button background-accent-light" ng-repeat="item in navButtons">
-				<a ng-if="item.folder" ng-href="/files?sourceId={{item.source}}&folderId={{item.folder}}">{{item.text}}</a>
-				<a ng-if="item.page" ng-href="/{{item.page}}">{{item.text}}</a>
-			</div>
-		</div>
-		<div class="divider"></div>
-		<div class="audio" ng-if="!!audio">
-			<audio id="navAudio" preload="none" controls>
-				<source data-ng-src="{{audio.src}}"> Your browser does not support the audio element.
-			</audio>
-		</div>
-		<div class="divider" ng-if="!!audio"></div>
-		<div class="account" ng-if="loggedInUser">
-			<div class="account-avatars">
-				<img ng-src="loggedInUser.avatar" ng-if="loggedInUser.profile.avatar">
-				<i class="material-icons account-avatar" ng-if="!loggedInUser.profile.avatar">face</i>
-			</div>
-			<div>
-				<div class="account-name">
-					{{loggedInUser.profile.firstname}} {{loggedInUser.profile.lastname}}
-				</div>
-				<div class="account-actions">
-					<a class="text-color-primary" href="/settings">Settings</a>
-					<span class="action-separator text-color-muted">●</span>
-					<a class="text-color-primary" href="" ng-click="logoutUser()">Logout</a>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div class="stages"><ng-view></ng-view></div>
 
-	<div class="stages">
-		<ng-view></ng-view>
-	</div>
+    <div class="previewContainer" ng-if="!!preview">
+      <div class="preview">
+        <div class="preview-toolbar">
+          <div class="preview-toolbar-left">
+            <i
+              class="material-icons"
+              ng-if="!preview.file.dat.iconLink && !preview.file.isFolder"
+              >insert_drive_file</i
+            >
+            <i
+              class="material-icons"
+              ng-if="!preview.file.dat.iconLink && preview.file.isFolder"
+              >folder</i
+            >
+            <img
+              ng-src="preview.file.dat.iconLink"
+              ng-if="preview.file.dat.iconLink"
+            />
+            {{ preview.file.dat.name }}
+          </div>
+          <div class="preview-toolbar-right" ng-click="preview.close()">
+            <i class="material-icons">close</i> Close
+          </div>
+        </div>
+        <div class="preview-main">
+          <div
+            class="preview-main-pdf"
+            ng-if="!preview.loading && preview.type == 'pdf'"
+          >
+            <!--
+              <pdfjs-viewer ng-prop-data="preview.file.preview" on-init="preview.onLoad()" print="false"></pdfjs-viewer>
+            -->
+          </div>
+          <div
+            class="preview-main-html"
+            ng-if="!preview.loading && preview.type == 'docx'"
+          >
+            {{ preview.html }}
+          </div>
+          <div class="status-box" ng-if="preview.supported && preview.loading">
+            <i class="status-box-loading material-icons">autorenew</i>
+            <h1>Loading preview....</h1>
+          </div>
+          <div class="status-box" ng-if="!preview.supported">
+            <i class="material-icons">error_outline</i>
+            <h1>This file cannot be previewed</h1>
+          </div>
+        </div>
+      </div>
+    </div>
 
-	<div class="previewContainer" ng-if="!!preview">
-		<div class="preview">
-			<div class="preview-toolbar">
-				<div class="preview-toolbar-left">
-					<i class="material-icons" ng-if="!preview.file.dat.iconLink && !preview.file.isFolder">insert_drive_file</i>
-					<i class="material-icons" ng-if="!preview.file.dat.iconLink && preview.file.isFolder">folder</i>
-					<img ng-src="preview.file.dat.iconLink" ng-if="preview.file.dat.iconLink"> {{preview.file.dat.name}}
-				</div>
-				<div class="preview-toolbar-right" ng-click="preview.close()">
-					<i class="material-icons">close</i>
-					Close
-				</div>
-			</div>
-			<div class="preview-main">
-				<div class="preview-main-pdf" ng-if="!preview.loading && preview.type == 'pdf'">
-					<!-- <pdfjs-viewer ng-prop-data="preview.file.preview" on-init="preview.onLoad()" print="false"></pdfjs-viewer> -->
-				</div>
-				<div class="preview-main-html" ng-if="!preview.loading && preview.type == 'docx'">
-					{{preview.html}}
-				</div>
-				<div class="status-box" ng-if="preview.supported && preview.loading">
-					<i class="status-box-loading material-icons">autorenew</i>
-					<h1>Loading preview....</h1>
-				</div>
-				<div class="status-box" ng-if="!preview.supported">
-					<i class="material-icons">error_outline</i>
-					<h1>This file cannot be previewed</h1>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div class="popupContainer center-content" ng-if="!!popup">
+      <ng-include src="popup.popupView"></ng-include>
+    </div>
 
-	<div class="popupContainer center-content" ng-if="!!popup">
-		<ng-include src="popup.popupView"></ng-include>
-	</div>
-
-	<div class="angular-fail" ng-if="false">
-		<div class="status-box">
-			<i class="material-icons">error_outline</i>
-			<h1>Binder has crashed :(</h1>
-			<h3><a href="/">Click to go to the home page</a></h3>
-		</div>
-	</div>
-</body>
-
+    <div class="angular-fail" ng-if="false">
+      <div class="status-box">
+        <i class="material-icons">error_outline</i>
+        <h1>Binder has crashed :(</h1>
+        <h3><a href="/">Click to go to the home page</a></h3>
+      </div>
+    </div>
+  </body>
 </html>
