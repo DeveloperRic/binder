@@ -1,42 +1,48 @@
 const MongoClient = require("mongodb").MongoClient;
-
-const url = "mongodb://admin:78nZsaOaA24d@ds121382.mlab.com:21382/binder";
-const dbName = "binder";
+require("dotenv").config();
 
 var mongodb;
 
-exports.connect = function(onSuccess, onFail) {
+exports.connect = function (onSuccess, onFail) {
   // open the connection to the binder MongoDB server
   MongoClient.connect(
-    url,
+    process.env.MONGODB_CONNECTION_STRING,
     {
-      useNewUrlParser: true
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     },
-    function(err, client) {
+    (err, client) => {
       if (err) return onFail(err);
       // create a new database instance
-      mongodb = client.db(dbName);
+      mongodb = client.db(process.env.MONGODB_DATABASE_NAME);
       console.log("Successfully connected to MongoDB server");
       onSuccess();
     }
   );
 };
 
-exports.insertDocument = function(collectionName, document, onSuccess, onFail) {
-  mongodb.collection(collectionName).insertOne(document, function(err, result) {
-    if (err || result.insertedCount != 1) {
-      console.error(err);
-      return onFail(err, result);
-    }
-    onSuccess(result);
-  });
+exports.insertDocument = function (
+  collectionName,
+  document,
+  onSuccess,
+  onFail
+) {
+  mongodb
+    .collection(collectionName)
+    .insertOne(document, function (err, result) {
+      if (err || result.insertedCount != 1) {
+        console.error(err);
+        return onFail(err, result);
+      }
+      onSuccess(result);
+    });
 };
 
-exports.findDocuments = function(collectionName, query, onSuccess, onFail) {
+exports.findDocuments = function (collectionName, query, onSuccess, onFail) {
   mongodb
     .collection(collectionName)
     .find(query)
-    .toArray(function(err, docs) {
+    .toArray(function (err, docs) {
       if (err) {
         console.error(err);
         return onFail(err);
@@ -45,7 +51,7 @@ exports.findDocuments = function(collectionName, query, onSuccess, onFail) {
     });
 };
 
-exports.updateDocumentField = function(
+exports.updateDocumentField = function (
   collectionName,
   query,
   $set,
@@ -58,7 +64,7 @@ exports.updateDocumentField = function(
 function updateDocument(collectionName, query, operation, onSuccess, onFail) {
   mongodb
     .collection(collectionName)
-    .updateOne(query, operation, function(err, result) {
+    .updateOne(query, operation, function (err, result) {
       if (err) {
         console.error(err);
         return onFail(err, result);
@@ -68,7 +74,7 @@ function updateDocument(collectionName, query, operation, onSuccess, onFail) {
 }
 exports.updateDocument = updateDocument;
 
-exports.upsertDocument = function(
+exports.upsertDocument = function (
   collectionName,
   query,
   $set,
@@ -80,7 +86,7 @@ exports.upsertDocument = function(
     // { $set: $set, $setOnInsert: $setOnInsert }
     { $set: $set },
     { upsert: true },
-    function(err, result) {
+    function (err, result) {
       if (err) {
         console.error(err);
         return onFail(err, result);
@@ -90,8 +96,8 @@ exports.upsertDocument = function(
   );
 };
 
-exports.removeDocument = function(collectionName, query, onSuccess, onFail) {
-  mongodb.collection(collectionName).deleteOne(query, function(err, result) {
+exports.removeDocument = function (collectionName, query, onSuccess, onFail) {
+  mongodb.collection(collectionName).deleteOne(query, function (err, result) {
     if (err) {
       console.error(err);
       return onFail(err, result);

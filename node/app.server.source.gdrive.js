@@ -1,5 +1,6 @@
 const fs = require("fs");
 const { google } = require("googleapis");
+require("dotenv").config();
 
 const mongodb = require("./app.server.mongodb.js");
 const udb = require("../node/app.server.user");
@@ -17,10 +18,10 @@ var authSessions = [];
 // If modifying a user's scope, delete their credentials from database.
 const SCOPE_LEVELS = [
   ["https://www.googleapis.com/auth/drive.metadata.readonly"],
-  ["https://www.googleapis.com/auth/drive"]
+  ["https://www.googleapis.com/auth/drive"],
 ];
 
-exports.init = function() {
+exports.init = function () {
   // Load client secrets from a local file.
   fs.readFile(
     "server_data/app.server.source.gdrive.client_secret.json",
@@ -44,7 +45,7 @@ function getUserToken(uid, onSuccess, onFail) {
   mongodb.findDocuments(
     TOKENS_COL_NAME,
     { uid: uid },
-    docs => {
+    (docs) => {
       if (docs.length == 0) {
         // not a mongodb error / token was not found
         onSuccess(null);
@@ -73,13 +74,13 @@ function setUserToken(uid, token, onSuccess, onFail) {
   }
 }
 
-exports.resetUserToken = function(uid, onSuccess, onFail) {
+exports.resetUserToken = function (uid, onSuccess, onFail) {
   setUserToken(uid, null, onSuccess, onFail);
 };
 
 function getAuthSession(uid) {
   var authSession = null;
-  authSessions.forEach(asession => {
+  authSessions.forEach((asession) => {
     if (asession.uid == uid) {
       authSession = asession;
     }
@@ -90,7 +91,7 @@ function getAuthSession(uid) {
 function getAuth(uid, onSuccess, onFail) {
   getUserToken(
     uid,
-    token => {
+    (token) => {
       if (token) {
         var oAuth2Client = new google.auth.OAuth2(
           client_id,
@@ -107,7 +108,7 @@ function getAuth(uid, onSuccess, onFail) {
   );
 }
 
-exports.beginAuthorize = function(
+exports.beginAuthorize = function (
   uid,
   forceUpdate,
   onPrompt,
@@ -116,7 +117,7 @@ exports.beginAuthorize = function(
 ) {
   getUserToken(
     uid,
-    token => {
+    (token) => {
       if (token && !forceUpdate) {
         onSuccess();
       } else {
@@ -128,9 +129,9 @@ exports.beginAuthorize = function(
         errors: [
           {
             code: 500,
-            message: "gdrive token database is broken :( Please report this!"
-          }
-        ]
+            message: "gdrive token database is broken :( Please report this!",
+          },
+        ],
       });
     }
   );
@@ -139,7 +140,7 @@ exports.beginAuthorize = function(
 function getAccessToken(uid, onPrompt, onFail) {
   udb.getUserWithUID(
     uid,
-    user => {
+    (user) => {
       var oAuth2Client = new google.auth.OAuth2(
         client_id,
         client_secret,
@@ -148,7 +149,8 @@ function getAccessToken(uid, onPrompt, onFail) {
       const authUrl = oAuth2Client.generateAuthUrl({
         access_type: "offline",
         scope: SCOPE_LEVELS[user.accessLevel],
-        prompt: "consent"
+        prompt: "consent",
+        redirect_uri: process.env.GOOGLE_CLOUD_AUTH_REDIRECT_URI,
       });
       var authSession = getAuthSession(uid);
       if (authSession != null) {
@@ -158,31 +160,31 @@ function getAccessToken(uid, onPrompt, onFail) {
       }
       onPrompt(authUrl);
     },
-    mongodbError => {
+    (mongodbError) => {
       if (mongodbError) {
         onFail({
           errors: [
             {
               code: 500,
-              message: "users database is broken :( Please report this!"
-            }
-          ]
+              message: "users database is broken :( Please report this!",
+            },
+          ],
         });
       } else {
         onFail({
           errors: [
             {
               code: 404,
-              message: "User with uid (" + uid + ") could not be found!"
-            }
-          ]
+              message: "User with uid (" + uid + ") could not be found!",
+            },
+          ],
         });
       }
     }
   );
 }
 
-exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
+exports.finishAuthorize = function (uid, code, onSuccess, onFail) {
   var authSession = getAuthSession(uid);
   if (authSession) {
     var oAuth2Client = authSession.authclient;
@@ -197,19 +199,19 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
               errors: [
                 {
                   code: 500,
-                  message: "Couldn't update user's gdrive access token"
-                }
-              ]
+                  message: "Couldn't update user's gdrive access token",
+                },
+              ],
             });
           });
         };
         if (!token.refresh_token) {
           getUserToken(
             uid,
-            userToken => {
+            (userToken) => {
               if (userToken && userToken.refresh_token) {
                 token = Object.assign(token, {
-                  refresh_token: userToken.refresh_token
+                  refresh_token: userToken.refresh_token,
                 });
               }
               assignUserToken();
@@ -220,9 +222,9 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
                   {
                     code: 500,
                     message:
-                      "gdrive token database is broken :( Please report this!"
-                  }
-                ]
+                      "gdrive token database is broken :( Please report this!",
+                  },
+                ],
               });
             }
           );
@@ -236,15 +238,15 @@ exports.finishAuthorize = function(uid, code, onSuccess, onFail) {
   }
 };
 
-exports.unAuthorize = function(uid, onSuccess, onFail) {
+exports.unAuthorize = function (uid, onSuccess, onFail) {
   setUserToken(uid, null, onSuccess, () => {
     onFail({
-      errors: [{ code: 500, message: "Couldn't disconnect user's gdrive" }]
+      errors: [{ code: 500, message: "Couldn't disconnect user's gdrive" }],
     });
   });
 };
 
-exports.listFiles = function(
+exports.listFiles = function (
   uid,
   folderId,
   pageToken,
@@ -254,7 +256,7 @@ exports.listFiles = function(
 ) {
   getAuth(
     uid,
-    auth => {
+    (auth) => {
       drive.files.list(
         Object.assign(
           {
@@ -263,7 +265,7 @@ exports.listFiles = function(
             pageToken: pageToken,
             q: "'" + folderId + "' in parents",
             fields:
-              "nextPageToken, files(id, name, mimeType, webViewLink, iconLink, thumbnailLink, parents)"
+              "nextPageToken, files(id, name, mimeType, webViewLink, iconLink, thumbnailLink, parents)",
           },
           params
         ),
@@ -279,22 +281,22 @@ exports.listFiles = function(
     () => {
       onFail({
         errors: [
-          { code: 500, message: "Couldn't get the user's gdrive access token" }
-        ]
+          { code: 500, message: "Couldn't get the user's gdrive access token" },
+        ],
       });
     }
   );
 };
 
-exports.getFile = function(uid, fileId, onSuccess, onFail) {
+exports.getFile = function (uid, fileId, onSuccess, onFail) {
   getAuth(
     uid,
-    auth => {
+    (auth) => {
       drive.files.get(
         {
           auth: auth,
           fileId: fileId,
-          fields: "items(id, name)"
+          fields: "items(id, name)",
         },
         (error, data) => {
           if (error) {
@@ -308,20 +310,20 @@ exports.getFile = function(uid, fileId, onSuccess, onFail) {
     () => {
       onFail({
         errors: [
-          { code: 500, message: "Couldn't get the user's gdrive access token" }
-        ]
+          { code: 500, message: "Couldn't get the user's gdrive access token" },
+        ],
       });
     }
   );
 };
 
-exports.getFileMetadata = function(uid, fileId, keys, onSuccess, onFail) {
+exports.getFileMetadata = function (uid, fileId, keys, onSuccess, onFail) {
   getAuth(
     uid,
-    auth => {
+    (auth) => {
       var fields = "id";
       if (keys.length > 0) {
-        keys.forEach(key => {
+        keys.forEach((key) => {
           fields += ", " + key;
         });
       }
@@ -329,7 +331,7 @@ exports.getFileMetadata = function(uid, fileId, keys, onSuccess, onFail) {
         {
           auth: auth,
           fileId: fileId,
-          fields: fields
+          fields: fields,
         },
         (err, res) => {
           if (err) {
@@ -343,14 +345,14 @@ exports.getFileMetadata = function(uid, fileId, keys, onSuccess, onFail) {
     () => {
       onFail({
         errors: [
-          { code: 500, message: "Couldn't get the user's gdrive access token" }
-        ]
+          { code: 500, message: "Couldn't get the user's gdrive access token" },
+        ],
       });
     }
   );
 };
 
-exports.updateFileMetadata = function(
+exports.updateFileMetadata = function (
   uid,
   fileId,
   metadata,
@@ -359,7 +361,7 @@ exports.updateFileMetadata = function(
 ) {
   getAuth(
     uid,
-    auth => {
+    (auth) => {
       var fields = "id, name";
       for (let key in metadata) {
         if (!fields.includes(key)) {
@@ -372,7 +374,7 @@ exports.updateFileMetadata = function(
           fileId: fileId,
           uploadType: "multipart",
           resource: metadata,
-          fields: fields
+          fields: fields,
         },
         (err, res) => {
           if (err) {
@@ -387,8 +389,8 @@ exports.updateFileMetadata = function(
     () => {
       onFail({
         errors: [
-          { code: 500, message: "Couldn't get the user's gdrive access token" }
-        ]
+          { code: 500, message: "Couldn't get the user's gdrive access token" },
+        ],
       });
     }
   );
